@@ -1,9 +1,9 @@
 import React from "react";
 
 const CustomInput = (props) => {
-  const { type, className, id, label, labelShow } = props;
+  const { type, className, id, label, name, labelShow, value, onChange } = props;
   return (
-    <div className="mb-3">
+    <div className="mt-3">
       {labelShow === true && (
         <label htmlFor={label} className="form-label">
           {label}
@@ -14,10 +14,16 @@ const CustomInput = (props) => {
         type={type}
         className={` form-control ${className}`}
         id={id}
-        placeholder={label}
+        name={name}
+
+        value={value}
+        onChange={onChange}
+
       />
     </div>
   );
 };
 
 export default CustomInput;
+
+

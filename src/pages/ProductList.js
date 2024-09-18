@@ -1,89 +1,87 @@
 import { Table } from "antd";
-import React from "react";
-
+import React, { useEffect } from "react";
+import { getProducts } from "../features/product/productSlice";
+import { useDispatch, useSelector } from "react-redux";
+import type { ColumnsType } from "antd/es/table";
+import { MdDelete } from "react-icons/md";
+import Link from "antd/es/typography/Link";
+import { FaRegEdit } from "react-icons/fa";
 interface DataType {
   key: React.Key;
-  name: string;
-  chinese: number;
-  math: number;
-  english: number;
+  title: string;
+  category: string | undefined;
+  brand: string | undefined;
+  slug: string;
+  price: number; // Corrected the type to number
+  images: string;
+  action: string;
 }
 
-const columns: TableColumnsType<DataType> = [
+const columns: ColumnsType<DataType> = [
   {
-    title: "Name",
-    dataIndex: "name",
-    sorter: {
-      compare: (a, b) => a.name - b.name,
-      multiple: 4,
-    },
+    title: "Title",
+    dataIndex: "title",
+    sorter: (a: DataType, b: DataType) => a.title.localeCompare(b.title),
   },
   {
-    title: "Chinese Score",
-    dataIndex: "chinese",
-    sorter: {
-      compare: (a, b) => a.chinese - b.chinese,
-      multiple: 3,
-    },
+    title: "Category",
+    dataIndex: "category",
+    sorter: (a: DataType, b: DataType) => (a.category || "").localeCompare(b.category || ""),
   },
   {
-    title: "Math Score",
-    dataIndex: "math",
-    sorter: {
-      compare: (a, b) => a.math - b.math,
-      multiple: 2,
-    },
+    title: "Brand",
+    dataIndex: "brand",
+    sorter: (a: DataType, b: DataType) => (a.brand || "" ).localeCompare(b.brand || ""),
   },
   {
-    title: "English Score",
-    dataIndex: "english",
-    sorter: {
-      compare: (a, b) => a.english - b.english,
-      multiple: 1,
-    },
-  },
-];
-
-const data: DataType[] = [
-  {
-    key: "1",
-    name: "John Brown",
-    chinese: 98,
-    math: 60,
-    english: 70,
+    title: "Slug",
+    dataIndex: "slug",
   },
   {
-    key: "2",
-    name: "Jim Green",
-    chinese: 98,
-    math: 66,
-    english: 89,
+    title: "Price",
+    dataIndex: "price",
+    sorter: (a: DataType, b: DataType) => a.price - b.price, // Numeric comparison
   },
   {
-    key: "3",
-    name: "Joe Black",
-    chinese: 98,
-    math: 90,
-    english: 70,
+    title: "Images",
+    dataIndex: "images",
   },
   {
-    key: "4",
-    name: "Jim Red",
-    chinese: 88,
-    math: 99,
-    english: 89,
+    title: "Action",
+    dataIndex: "action",
   },
 ];
 
-const onChange: TableProps<DataType>["onChange"] = (
-  pagination,
-  filters,
-  sorter,
-  extra
-) => {
+const onChange = (pagination: any, filters: any, sorter: any, extra: any) => {
   console.log("params", pagination, filters, sorter, extra);
 };
+
 export default function ProductList() {
+  const dispatch = useDispatch();
+
+  const productList = useSelector((state: any) => state.product.products);
+  console.log(productList);
+
+  useEffect(() => {
+    dispatch(getProducts());
+  }, [dispatch]);
+
+  const data: DataType[] = productList.map((product: any, index: number) => ({
+    key: index,
+    title: product.title,
+    slug: product.slug,
+    price: product.price,
+    images: product.images,
+    category: product.category,
+    brand: product.brand,
+    action:(
+      <>
+        <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
+      </>
+    )
+  }));
+
   return (
     <div>
       <h3 className="mb-5">Product List</h3>
