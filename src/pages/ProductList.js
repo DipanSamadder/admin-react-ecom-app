@@ -4,8 +4,11 @@ import { getProducts } from "../features/product/productSlice";
 import { useDispatch, useSelector } from "react-redux";
 import type { ColumnsType } from "antd/es/table";
 import { MdDelete } from "react-icons/md";
-import Link from "antd/es/typography/Link";
 import { FaRegEdit } from "react-icons/fa";
+import Link from "antd/es/typography/Link";
+
+
+
 interface DataType {
   key: React.Key;
   title: string;

@@ -1,89 +1,55 @@
 import { Table } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
+import  { ColumnsType } from "antd/es/table";
+import { useDispatch, useSelector } from "react-redux";
+import { getColorList } from "../features/color/colorSlice";
+import { Link } from "react-router-dom";
+import { MdDelete } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+
 
 interface DataType {
   key: React.Key;
-  name: string;
-  chinese: number;
-  math: number;
-  english: number;
+  name:string,
+  action:string
 }
 
-const columns: TableColumnsType<DataType> = [
+const columns: ColumnsType<DataType> = [
   {
-    title: "Name",
+    title:"Name",
     dataIndex: "name",
-    sorter: {
-      compare: (a, b) => a.name - b.name,
-      multiple: 4,
-    },
+    sorter: (a: DataType, b: DataType) => (a.name).localeCompare(b.name),
   },
   {
-    title: "Chinese Score",
-    dataIndex: "chinese",
-    sorter: {
-      compare: (a, b) => a.chinese - b.chinese,
-      multiple: 3,
-    },
-  },
-  {
-    title: "Math Score",
-    dataIndex: "math",
-    sorter: {
-      compare: (a, b) => a.math - b.math,
-      multiple: 2,
-    },
-  },
-  {
-    title: "English Score",
-    dataIndex: "english",
-    sorter: {
-      compare: (a, b) => a.english - b.english,
-      multiple: 1,
-    },
-  },
-];
+    title: "Action",
+    dataIndex: "action",
+  }
+]
 
-const data: DataType[] = [
-  {
-    key: "1",
-    name: "John Brown",
-    chinese: 98,
-    math: 60,
-    english: 70,
-  },
-  {
-    key: "2",
-    name: "Jim Green",
-    chinese: 98,
-    math: 66,
-    english: 89,
-  },
-  {
-    key: "3",
-    name: "Joe Black",
-    chinese: 98,
-    math: 90,
-    english: 70,
-  },
-  {
-    key: "4",
-    name: "Jim Red",
-    chinese: 88,
-    math: 99,
-    english: 89,
-  },
-];
+const onChange: TableProps<DataType>["onChange"] =(pagination, filters, sorter, extra) => {
+  console.log("params", pagination,filters,sorter,extra);
+}
 
-const onChange: TableProps<DataType>["onChange"] = (
-  pagination,
-  filters,
-  sorter,
-  extra
-) => {
-  console.log("params", pagination, filters, sorter, extra);
-};
 export default function ColorList() {
+  const dispatch = useDispatch();
+  const getColorsList = useSelector((state) => state.color.data || []);
+  console.log(getColorsList);
+  
+  useEffect(()=>{
+    dispatch(getColorList());
+  },[dispatch]);
+  const data: DataType[] = getColorsList.map((row, index)=>(
+    {
+      key: index,
+      name:row.title,
+      action:(
+        <>
+        <Link className="btn m-1 bg-primary text-white" to="/"><FaRegEdit/></Link>
+        <Link className="btn m-1 bg-primary text-white" to="/"><MdDelete/></Link>
+        </>
+      )
+    }
+  ))
   return (
     <div>
       <h3 className="mb-5">Color List</h3>

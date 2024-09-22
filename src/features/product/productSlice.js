@@ -21,6 +21,19 @@ export const getProducts = createAsyncThunk("admin/products", async (thunkAPI)=>
 
         return thunkAPI.rejectWithValue(serializableError);
     }
+});
+
+export const addProducts = createAsyncThunk("admin/add-products", async (data, thunkAPI)=>{
+    try {
+        return await productService.addProduct(data);
+    } catch (error) {
+        const serializableError = {
+            message: error.response?.data?.message || error.message,
+            status: error.response?.status,
+        };
+
+        return thunkAPI.rejectWithValue(serializableError);
+    }
 })
 
 export const productSlice = createSlice({
@@ -43,7 +56,22 @@ export const productSlice = createSlice({
             state.isError=true;
             state.isSuccess=false;
             state.message=action.payload?.message;
-        } );
+        }).addCase(addProducts.pending, (state) => {
+            state.isLoading=true
+        }).addCase(addProducts.fulfilled, (state, action) => {
+            state.isLoading=false;
+            state.isError=false;
+            state.message="";
+            state.isSuccess=true;
+            state.products= action.payload;
+
+
+        }).addCase(addProducts.rejected, (state,action) =>{
+            state.isLoading=false;
+            state.isError=true;
+            state.isSuccess=false;
+            state.message=action.payload?.message;
+        });
     }
 
 

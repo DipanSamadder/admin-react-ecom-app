@@ -15,7 +15,7 @@ const CustomInput = (props) => {
         className={` form-control ${className}`}
         id={id}
         name={name}
-
+        placeholder= {labelShow === false ? label : ''}
         value={value}
         onChange={onChange}
 

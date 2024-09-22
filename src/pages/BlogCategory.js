@@ -1,79 +1,42 @@
 import { Table } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
+import {useDispatch, useSelector} from "react-redux";
+import { ColumnsType } from "antd/es/table";
+import { MdDelete } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+import {Link} from "react-router-dom";
+import { blogCategory } from "../features/blogCate/blogCategorySlice";
 
 interface DataType {
   key: React.Key;
-  name: string;
-  chinese: number;
-  math: number;
-  english: number;
+  title: string;
+  lavel: number;
+  parent: number;
+  action: string;
 }
 
-const columns: TableColumnsType<DataType> = [
+const columns: ColumnsType<DataType> = [
   {
-    title: "Name",
-    dataIndex: "name",
-    sorter: {
-      compare: (a, b) => a.name - b.name,
-      multiple: 4,
-    },
+    title: "Title",
+    dataIndex: "title",
+    sorter: (a: DataType, b: DataType) => (a.title).localeCompare(b.title)
   },
   {
-    title: "Chinese Score",
-    dataIndex: "chinese",
-    sorter: {
-      compare: (a, b) => a.chinese - b.chinese,
-      multiple: 3,
-    },
+    title: "Level",
+    dataIndex: "level",
+    sorter: (a: DataType, b: DataType) => (a.level -b.level)
   },
   {
-    title: "Math Score",
-    dataIndex: "math",
-    sorter: {
-      compare: (a, b) => a.math - b.math,
-      multiple: 2,
-    },
+    title: "Parent",
+    dataIndex: "parent",
+    sorter: (a: DataType, b: DataType) => (a.parent-b.parent)
   },
   {
-    title: "English Score",
-    dataIndex: "english",
-    sorter: {
-      compare: (a, b) => a.english - b.english,
-      multiple: 1,
-    },
+    title: "Action",
+    dataIndex: "action",
   },
 ];
 
-const data: DataType[] = [
-  {
-    key: "1",
-    name: "John Brown",
-    chinese: 98,
-    math: 60,
-    english: 70,
-  },
-  {
-    key: "2",
-    name: "Jim Green",
-    chinese: 98,
-    math: 66,
-    english: 89,
-  },
-  {
-    key: "3",
-    name: "Joe Black",
-    chinese: 98,
-    math: 90,
-    english: 70,
-  },
-  {
-    key: "4",
-    name: "Jim Red",
-    chinese: 88,
-    math: 99,
-    english: 89,
-  },
-];
 
 const onChange: TableProps<DataType>["onChange"] = (
   pagination,
@@ -84,6 +47,27 @@ const onChange: TableProps<DataType>["onChange"] = (
   console.log("params", pagination, filters, sorter, extra);
 };
 export default function BlogCategory() {
+  const dispatch = useDispatch();
+
+  const getBlogCate = useSelector((state:any)=> state.bcat.data || []);
+
+  useEffect(()=>{
+    dispatch(blogCategory());
+  },[dispatch]);
+
+
+const data: DataType[] = getBlogCate.map((field: any, index:any)=> ({
+  key: index,
+  title: field.title,
+  lavel: field.level,
+  parent: field.parent, 
+  action:(
+    <>
+      <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
+      <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
+    </>
+  )
+}));
   return (
     <div>
       <h3 className="mb-5">BlogCategory</h3>

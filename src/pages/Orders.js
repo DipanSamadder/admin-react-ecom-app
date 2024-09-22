@@ -1,89 +1,87 @@
 import { Table } from "antd";
-import React from "react";
+import React, { useEffect } from "react";
+import { getOrderList } from "../features/order/orderSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { ColumnsType } from "antd/es/table";
+import { MdDelete } from "react-icons/md";
+import { FaRegEdit } from "react-icons/fa";
+import Link from "antd/es/typography/Link";
+
+
 
 interface DataType {
   key: React.Key;
-  name: string;
-  chinese: number;
-  math: number;
-  english: number;
+  name: String,
+  products: string;
+  paymentIntent: Array;
+  orderStatus: Object;
+  createdAt: string;
+  action:String;
 }
 
-const columns: TableColumnsType<DataType> = [
+const columns: ColumnsType<DataType> = [
   {
-    title: "Name",
+    title: "User name",
     dataIndex: "name",
-    sorter: {
-      compare: (a, b) => a.name - b.name,
-      multiple: 4,
-    },
+    sorter: (a: DataType, b: DataType) => (a.name).localeCompare(b.name),
   },
   {
-    title: "Chinese Score",
-    dataIndex: "chinese",
-    sorter: {
-      compare: (a, b) => a.chinese - b.chinese,
-      multiple: 3,
-    },
+    title: "Products",
+    dataIndex: "products",
   },
   {
-    title: "Math Score",
-    dataIndex: "math",
-    sorter: {
-      compare: (a, b) => a.math - b.math,
-      multiple: 2,
-    },
+    title: "Payment",
+    dataIndex: "paymentIntent",
   },
   {
-    title: "English Score",
-    dataIndex: "english",
-    sorter: {
-      compare: (a, b) => a.english - b.english,
-      multiple: 1,
-    },
+    title: "Status",
+    dataIndex: "orderStatus",
+  },
+  {
+    title: "Created At",
+    dataIndex: "createdAt",
+  },
+  {
+    title: "Action",
+    dataIndex: "action",
   },
 ];
 
-const data: DataType[] = [
-  {
-    key: "1",
-    name: "John Brown",
-    chinese: 98,
-    math: 60,
-    english: 70,
-  },
-  {
-    key: "2",
-    name: "Jim Green",
-    chinese: 98,
-    math: 66,
-    english: 89,
-  },
-  {
-    key: "3",
-    name: "Joe Black",
-    chinese: 98,
-    math: 90,
-    english: 70,
-  },
-  {
-    key: "4",
-    name: "Jim Red",
-    chinese: 88,
-    math: 99,
-    english: 89,
-  },
-];
-
-const onChange: TableProps<DataType>["onChange"] = (
-  pagination,
-  filters,
-  sorter,
-  extra
-) => {
+const onChange = (pagination: any, filters: any, sorter: any, extra: any) => {
   console.log("params", pagination, filters, sorter, extra);
 };
+
 export default function Orders() {
+  const dispatch = useDispatch();
+
+  const orderList = useSelector((state: any) => state.order.data || []);
+  console.log(orderList);
+
+  useEffect(() => {
+    dispatch(getOrderList());
+  }, [dispatch]);
+
+  const data: DataType[] = orderList.map((row: any, index: number) => ({
+    key: index,
+    name: (
+      <>
+      {row.orderBy.firstname}<br/>
+      <small>{row.orderBy.mobile}</small>
+      </>
+    ),
+    products: row.products.map((prow, index)=>{
+        return <p key={index}>{prow.product.title}</p>
+    }),
+    paymentIntent: row.paymentIntent.amount,
+    orderStatus: row.orderStatus,
+    createdAt: new Date(row.createdAt).toLocaleString(),
+    action:(
+      <>
+        <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
+      </>
+    )
+  }));
   return (
     <div>
       <h3 className="mb-5">Orders</h3>
