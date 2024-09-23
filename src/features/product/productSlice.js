@@ -39,14 +39,20 @@ export const addProducts = createAsyncThunk("admin/add-products", async (data, t
 export const productSlice = createSlice({
     name:"product",
     initialState,
-    reducers:{},
+    reducers: {
+        resetState: (state) => {
+          state.isSuccess = false;
+          state.isError = false;
+          state.message = "";
+        },
+    },
     extraReducers: (builder) =>{
         builder.addCase(getProducts.pending, (state) => {
             state.isLoading=true
         }).addCase(getProducts.fulfilled, (state, action) => {
             state.isLoading=false;
             state.isError=false;
-            state.message="";
+            state.message=action.payload?.message;
             state.isSuccess=true;
             state.products= action.payload;
 
@@ -61,9 +67,9 @@ export const productSlice = createSlice({
         }).addCase(addProducts.fulfilled, (state, action) => {
             state.isLoading=false;
             state.isError=false;
-            state.message="";
+            state.message=action.payload?.message;
             state.isSuccess=true;
-            state.products= action.payload;
+            state.products.push(action.payload);
 
 
         }).addCase(addProducts.rejected, (state,action) =>{
@@ -77,5 +83,5 @@ export const productSlice = createSlice({
 
 });
 
-
+export const { resetState } = productSlice.actions;
 export default productSlice.reducer;

@@ -5,6 +5,8 @@ import { CiCircleList } from "react-icons/ci";
 import { FaClipboardList, FaUserFriends } from "react-icons/fa";
 import { FaListCheck } from "react-icons/fa6";
 import { IoIosColorPalette, IoMdAddCircleOutline } from "react-icons/io";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   MdAddShoppingCart,
   MdAssignmentAdd,
@@ -207,6 +209,18 @@ const MainLayout = () => {
         >
           <Outlet />
         </Content>
+        <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       </Layout>
     </Layout>
   );

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import CustomInput from "../components/CustomInput";
@@ -6,12 +6,25 @@ import CustomSelect from "../components/CustomSelect";
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {useDispatch, useSelector} from 'react-redux';
-import { addProducts } from "../features/product/productSlice";
+import { addProducts, resetState } from "../features/product/productSlice";
 import { getBrands } from "../features/brand/brandSlice";
 import { getProCate } from "../features/proCat/proCatSlice";
 import { getAllUser } from "../features/customers/customerSlice";
 import { Select } from 'antd';
 import { getColorList } from "../features/color/colorSlice";
+import { Image, Upload, message } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
+import { uploadFile, deleteFile } from "../features/upload/uploadSlice";
+import { ToastContainer, toast } from 'react-toastify';
+
+
+const getBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = (error) => reject(error);
+  });
 
 
 export default function AddProduct() {
@@ -27,41 +40,35 @@ export default function AddProduct() {
     { key: false, value: "Private" },
   ];
 
-  const [selectedItems, setSelectedItems] = useState([]);
   const getColorsList = useSelector((state) => state.color.data || []);
   const getBrandList = useSelector((state)=> state.brand.brands  || []);
   const getCateList = useSelector((state)=> state.pcat.data  || []);
-  const customerList = useSelector((state) => state.customer.customers);
-  useEffect(()=>{
-      dispatch(getBrands());
-      dispatch(getProCate());
-      dispatch(getAllUser());
-      dispatch(getColorList());
-  },[dispatch]);
+  const customerList = useSelector((state) => state.customer.customers || []);
+  const addPro = useSelector((state) => state.product || []);
 
-  const brandlist = getBrandList.map((val, i)=>({
+
+  // Memoize derived data to prevent unnecessary re-renders
+  const brandlist = useMemo(() => getBrandList.map((val) => ({
     key: val._id,
-    value: val.title 
-  }));
+    value: val.title,
+  })), [getBrandList]);
 
-  const categoryList = getCateList.map((val, i)=>({
+  const categoryList = useMemo(() => getCateList.map((val) => ({
     key: val._id,
-    value: val.title 
-  }));
+    value: val.title,
+  })), [getCateList]);
 
-  const colorList = getColorsList.map((val, i)=>({
+  const colorList = useMemo(() => getColorsList.map((val) => ({
     key: val._id,
-    value: val.title 
-  }));
+    value: val.title,
+  })), [getColorsList]);
 
-  const authorList = customerList.filter((val)=> val.role ==='admin').map((val, i) => ({
+
+  const authorList = useMemo(() => customerList.filter((val) => val.role === 'admin').map((val) => ({
     key: val._id,
-    value: val.firstname +' '+ val.lastname 
-    
-  }));
+    value: `${val.firstname} ${val.lastname}`,
+  })), [customerList]);
 
-  const filteredOptions = brandlist.filter((o) => !selectedItems.includes(o));
-  const [editorValue, setEditorValue] = useState(""); 
   const [isHtmlView, setIsHtmlView] = useState(false); 
   const editorStyle = { height: "300px" };
   // Modules for ReactQuill
@@ -109,7 +116,22 @@ export default function AddProduct() {
     title: Yup.string().required('Title is required'),
     price: Yup.string().required('Price is required'),
     quantity: Yup.string().required('Quantity is required'),
+    color: Yup.array().min(1, 'Select at last one color.').required('color is required'),
   });
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const [fileList, setFileList] = useState([]);
+
+  const handlePreview = async (file) => {
+    if (!file.url && !file.preview) {
+      file.preview = await getBase64(file.originFileObj);
+    }
+    setPreviewImage(file.url || file.preview);
+    setPreviewOpen(true);
+  };
+  const handleChange = ({ fileList: newFileList }) => setFileList(newFileList);
+  
 
   const formik = useFormik({
     initialValues: {
@@ -127,11 +149,13 @@ export default function AddProduct() {
       metaKey: '',
       metaTitle: '',
       indexed: '',
+      images: [],
     },
     validationSchema: schemaValidation,
-    onSubmit: values => {
+    onSubmit: (values,{resetForm}) => {
+      values.images = fileList.map(file => file.uid);
       dispatch(addProducts(values));
-      
+     
     },
   });
 
@@ -140,6 +164,91 @@ export default function AddProduct() {
   const handleToggleView = () => {
     setIsHtmlView(!isHtmlView);
   };
+
+
+  // Handle File Upload using FormData
+  const handleUpload = async ({ file }) => {
+    const formData = new FormData();
+    formData.append('images', file);
+    dispatch(uploadFile(formData))
+      .then((response) => {
+          // Assuming response.data contains the uploaded file details
+          const uploadedFiles = response.payload.data; // Get the array of uploaded files
+          const newFileList = uploadedFiles.map((uploadedFile) => ({
+              uid: uploadedFile._id,
+              name: file.name,
+              status: 'done',
+              url: uploadedFile.url,
+              publicId: uploadedFile.publicId,
+          }));
+
+          // Update the fileList with new images
+          setFileList(prevFileList => {
+              // Remove the 'uploading' file and add the new files
+              return prevFileList.filter(item => item.status !== 'uploading').concat(newFileList);
+          });
+          toast.success(`${file.name} ${response.payload.data.message}`);
+      })
+      .catch((response) => {
+          toast.error(`${response.payload.data.message}`);
+      });
+  };
+
+
+  // Handle File Delete using API
+  const handleRemove = async (file) => {
+    dispatch(deleteFile(file.publicId)) // Use the publicId or ID that your API requires
+    .then(() => {
+        const newFileList = fileList.filter((item) => item.uid !== file.uid);
+        setFileList(newFileList);
+        toast.success(`${file.name} deleted successfully.`);
+
+    })
+    .catch(() => {
+      toast.error('File deletion failed.');
+
+    });
+  };
+
+
+useEffect(()=> {
+  dispatch(getBrands());
+  dispatch(getProCate());
+  dispatch(getAllUser());
+  dispatch(getColorList());
+
+  if (addPro.isSuccess ===true && addPro.message !== undefined) {
+    toast.success(addPro.message);
+    formik.resetForm();
+    dispatch(resetState()); // Reset state after success
+  }
+
+  
+  if (addPro.isError ===true  && addPro.message !== undefined) {
+    toast.error(addPro.message);
+    dispatch(resetState()); // Reset state after error
+  }
+  
+},[addPro, dispatch]);
+
+  const uploadButton = (
+    <button
+      style={{
+        border: 0,
+        background: 'none',
+      }}
+      type="button"
+    >
+      <PlusOutlined />
+      <div
+        style={{
+          marginTop: 8,
+        }}
+      >
+        Upload
+      </div>
+    </button>
+  );
   return (
     <div>
       <h3 className="mb-5">Add Product</h3>
@@ -251,10 +360,11 @@ export default function AddProduct() {
                   <Select id="color"
                       label="Color"
                       name="color"
+                      allowClear
                       mode="multiple"
                       placeholder="Select colors"
                       value={formik.values.color} // Formik state value for the select
-                      onChange={(value) => formik.setFieldValue('color', value)} // Update form value on change
+                      onChange={(value) => {formik.setFieldValue('color', value); }} // Update form value on change
                       style={{
                         width: '100%',
                       }}
@@ -263,9 +373,15 @@ export default function AddProduct() {
                         label: item.value,
                       }))}
                   />
+                  
+                  <small className="text-danger">
+                      {formik.touched.color && formik.errors.color ? (
+                        <div>{formik.errors.color}</div>
+                      ) : null}
+                  </small>
                   </div>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <CustomInput
                     type="text"
                     id="price"
@@ -282,7 +398,7 @@ export default function AddProduct() {
                       ) : null}
                   </small>
                 </div>
-                <div className="col-md-6">
+                <div className="col-md-4">
                   <CustomInput
                     type="text"
                     id="quantity"
@@ -298,6 +414,18 @@ export default function AddProduct() {
                         <div>{formik.errors.quantity}</div>
                       ) : null}
                   </small>
+                </div>
+                <div className="col-md-4">
+                  <CustomInput
+                    type="text"
+                    id="tags"
+                    name="tags"
+                    label="Tags"
+                    labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.tags}
+                  />
+                  
                 </div>
               </div>
             </div>
@@ -400,6 +528,38 @@ export default function AddProduct() {
                   />
                 </div>
                 
+              </div>
+            </div>
+            <div className="card border-0 p-4 mb-3">
+              <h6>Product Images</h6>
+              <div className="row">
+                <div className="col-md-12">
+           
+                <Upload
+
+                    customRequest={handleUpload}
+                    listType="picture-card"
+                    fileList={fileList}
+                    onPreview={handlePreview}
+                    onRemove={handleRemove} 
+                    onChange={handleChange}
+                  >
+                    {fileList.length >= 8 ? null : uploadButton}
+                  </Upload>
+                  {previewImage && (
+                    <Image
+                      wrapperStyle={{
+                        display: 'none',
+                      }}
+                      preview={{
+                        visible: previewOpen,
+                        onVisibleChange: (visible) => setPreviewOpen(visible),
+                        afterOpenChange: (visible) => !visible && setPreviewImage(''),
+                      }}
+                      src={previewImage}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>
