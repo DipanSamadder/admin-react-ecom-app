@@ -1,43 +1,45 @@
 import { Table } from "antd";
+import { ColumnsType } from "antd/es/table";
 import React, { useEffect } from "react";
-import {useDispatch, useSelector} from "react-redux";
-import type { ColumnsType } from "antd/es/table";
-import { getBrands } from "../features/brand/brandSlice";
-import { MdDelete } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-
+import { getBrands } from "../features/brand/brandSlice";
 
 interface DataType {
   key: React.Key;
+  image: string;
   title: string;
-  lavel: number;
-  parent: number;
+  shortDes: string;
   action: string;
 }
 
 const columns: ColumnsType<DataType> = [
   {
+    title: "S.N",
+    dataIndex: "key",
+    sorter: (a: DateType, b: DateType) => a.key - b.key,
+  },
+  {
+    title: "Image",
+    dataIndex: "image",
+  },
+  {
     title: "Title",
     dataIndex: "title",
-    sorter: (a: DateType, b: DateType) => (a.title).localeCompare(b.title)
+    sorter: (a: DateType, b: DateType) => a.title.localeCompare(b.title),
   },
   {
-    title: "Level",
-    dataIndex: "level",
-    sorter: (a: DateType, b: DateType) => (a.level -b.level)
-  },
-  {
-    title: "Parent",
-    dataIndex: "parent",
-    sorter: (a: DateType, b: DateType) => (a.parent-b.parent)
+    title: "Short Des",
+    dataIndex: "shortDes",
+    sorter: (a: DateType, b: DateType) => a.shortDes - b.shortDes,
   },
   {
     title: "Action",
     dataIndex: "action",
   },
 ];
-
 
 const onChange: TableProps<DataType>["onChange"] = (
   pagination,
@@ -50,25 +52,28 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function BrandList() {
   const dispatch = useDispatch();
 
-  const getBrandList = useSelector((state:any)=> state.brand.brands  || []);
-  console.log(getBrandList);
-  useEffect(()=>{
+  const getBrandList = useSelector((state: any) => state.brand.brands || []);
+
+  useEffect(() => {
     dispatch(getBrands());
-  },[dispatch]);
+  }, [dispatch]);
 
-
-const data: DataType[] = getBrandList.map((product: any, index:any)=> ({
-  key: index,
-  title: product.title,
-  lavel: product.level,
-  parent: product.parent, 
-  action:(
-    <>
-      <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
-      <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
-    </>
-  )
-}));
+  const data: DataType[] = getBrandList.map((brand: any, index: any) => ({
+    key: index + 1,
+    image: brand.images,
+    title: brand.title,
+    shortDes: brand.parent,
+    action: (
+      <>
+        <Link className="btn m-1 bg-primary text-white" to="/edit/">
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+          <MdDelete />
+        </Link>
+      </>
+    ),
+  }));
 
   return (
     <div>
