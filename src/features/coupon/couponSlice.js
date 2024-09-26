@@ -1,35 +1,34 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import blogCateService from "./blogCategoryService";
+import couponService from "./couponService";
 
 const initialState = {
-  bCategory: [],
+  coupons: [],
   isLoading: false,
   isSuccess: false,
   isError: false,
   message: "",
 };
 
-export const blogCategory = createAsyncThunk(
-  "admin/blogCate",
-  async (thunkApi) => {
-    try {
-      return await blogCateService.getBlogCate();
-    } catch (error) {
-      const senitizerError = {
-        message: error.response?.data.messaeg || error.messaeg,
-        status: error.response?.status,
-      };
+export const getCoupons = createAsyncThunk("admin/coupon", async (thunkApi) => {
+  try {
+    return await couponService.getCoupon();
+  } catch (error) {
+    const senitizerError = {
+      message: error.response?.data.messaeg || error.messaeg,
+      status: error.response?.status,
+    };
 
-      return thunkApi.rejectWithValue(senitizerError);
-    }
+    return thunkApi.rejectWithValue(senitizerError);
   }
-);
+});
 
-export const createBlogCategory = createAsyncThunk(
-  "admin/add-blog-cate",
+export const createCoupons = createAsyncThunk(
+  "admin/add-coupon",
   async (payload, thunkApi) => {
     try {
-      return await blogCateService.createBlogCate(payload);
+      console.log(payload);
+
+      return await couponService.createCoupon(payload);
     } catch (error) {
       const senitizerError = {
         message: error.response?.data.messaeg || error.messaeg,
@@ -40,30 +39,30 @@ export const createBlogCategory = createAsyncThunk(
     }
   }
 );
-export const blogCategorySlice = createSlice({
-  name: "bCategory",
+export const couponSlice = createSlice({
+  name: "coupon",
   initialState,
   reducers: {
-    resetBlogCate: (state) => {
+    resetCoupon: (state) => {
       state.isLoading = false;
       state.isSuccess = false;
       state.isError = false;
-      state.createBlogCate = "";
+      state.createCouponData = "";
       state.message = "";
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(blogCategory.pending, (state) => {
+      .addCase(getCoupons.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(blogCategory.fulfilled, (state, action) => {
+      .addCase(getCoupons.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
         state.data = action.payload;
       })
-      .addCase(blogCategory.rejected, (state, action) => {
+      .addCase(getCoupons.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;
@@ -72,17 +71,17 @@ export const blogCategorySlice = createSlice({
 
     //for add category
     builder
-      .addCase(createBlogCategory.pending, (state) => {
+      .addCase(createCoupons.pending, (state) => {
         state.isLoading = true;
       })
-      .addCase(createBlogCategory.fulfilled, (state, action) => {
+      .addCase(createCoupons.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.createBlogCate = action.payload;
+        state.createCouponData = action.payload;
         state.message = action.payload?.message;
       })
-      .addCase(createBlogCategory.rejected, (state, action) => {
+      .addCase(createCoupons.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;
@@ -90,5 +89,5 @@ export const blogCategorySlice = createSlice({
       });
   },
 });
-export const { resetBlogCate } = blogCategorySlice.actions;
-export default blogCategorySlice.reducer;
+export const { resetCoupon } = couponSlice.actions;
+export default couponSlice.reducer;

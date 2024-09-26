@@ -1,67 +1,116 @@
-import React, { useState } from "react";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { useFormik } from "formik";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
+import CustomEditor from "../components/CustomEditor";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
+import CustomUpload from "../components/CustomUpload";
+import { createBlogNew, resetBlogData } from "../features/blog/blogSlice";
+import { blogCategory } from "../features/blogCate/blogCategorySlice";
+import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddBlog() {
-  const selectOption = [
-    { key: "enternentment", value: "Entertainment" },
-    { key: "comady", value: "Comedy" },
-    { key: "fun", value: "Funny" },
-    { key: "romance", value: "Romance" },
-  ];
-  const [editorValue, setEditorValue] = useState(""); // State to hold editor content
-  const [isHtmlView, setIsHtmlView] = useState(false); // State to toggle between editor and HTML view
-  const editorStyle = { height: "300px" };
-  // Modules for ReactQuill
-  const modules = {
-    toolbar: [
-      [{ header: "1" }, { header: "2" }, { font: [] }],
-      [{ size: [] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ script: "sub" }, { script: "super" }],
-      [{ indent: "-1" }, { indent: "+1" }],
-      [{ direction: "rtl" }],
-      [{ color: [] }, { background: [] }],
-      [{ align: [] }],
-      ["link", "image", "video"],
-      ["clean"],
-    ],
-  };
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const blogCateList = useSelector((state) => state.bcat.data || []);
 
-  // Formats for ReactQuill
-  const formats = [
-    "header",
-    "font",
-    "size",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "bullet",
-    "script",
-    "indent",
-    "direction",
-    "color",
-    "background",
-    "align",
-    "link",
-    "image",
-    "video",
+  const customerList = useSelector((state) => state.customer.customers || []);
+  const [toastMessage, setTostMessage] = useState(false);
+  const authorList = useMemo(
+    () =>
+      customerList
+        .filter((val) => val.role === "admin")
+        .map((val) => ({
+          key: val._id,
+          value: `${val.firstname} ${val.lastname}`,
+        })),
+    [customerList]
+  );
+
+  const blogCatList = useMemo(
+    () =>
+      blogCateList.map((val) => ({
+        key: val._id,
+        value: val.title,
+      })),
+    [blogCateList]
+  );
+
+  const addBlog = useSelector((state) => state.blog || []);
+  const { isSuccess, isError, message, createBlogData } = addBlog;
+
+  const selectIndex = [
+    { key: "Index", value: "Index" },
+    { key: "No Index", value: "No Index" },
+    { key: "Index Follow", value: "Index Follow" },
+    { key: "No Index No Follow", value: "No Index No Follow" },
   ];
 
-  // Handle the toggle between editor and HTML view
-  const handleToggleView = () => {
-    setIsHtmlView(!isHtmlView);
-  };
+  const statusList = [
+    { key: true, value: "Publish" },
+    { key: false, value: "Private" },
+  ];
+
+  let schemaValidation = Yup.object({
+    title: Yup.string().required("Title is required"),
+    author: Yup.string().required("Author is required"),
+  });
+
+  const [fileList, setFileList] = useState([]);
+
+  const formik = useFormik({
+    initialValues: {
+      title: "",
+      shortDes: "",
+      description: "",
+      category: "",
+      brand: "",
+      color: "",
+      price: "",
+      quantity: "",
+      author: "",
+      status: "",
+      metaDes: "",
+      metaKey: "",
+      metaTitle: "",
+      indexed: "",
+      images: [],
+    },
+    validationSchema: schemaValidation,
+    onSubmit: (values, { resetForm }) => {
+      values.images = fileList.map((file) => file.uid);
+      setTostMessage(true);
+      dispatch(createBlogNew(values));
+    },
+  });
+
+  useEffect(() => {
+    dispatch(getAllUser());
+    dispatch(blogCategory());
+    if (toastMessage) {
+      if (isSuccess && createBlogData) {
+        setTostMessage(false);
+        toast.success(message);
+        formik.resetForm();
+        dispatch(resetBlogData());
+        setTimeout(navigate("/admin/blog-list"), 1000);
+      }
+
+      if (isError) {
+        setTostMessage(false);
+        dispatch(resetBlogData());
+        toast.error(message);
+      }
+    }
+  }, [isSuccess, isError, message, createBlogData, dispatch]);
+
   return (
     <div>
       <h3 className="mb-5">Add Blog</h3>
-      <form>
+      <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
             <div className="card border-0 p-4 mb-3">
@@ -73,15 +122,14 @@ export default function AddBlog() {
                     id="title"
                     label="Blog Title"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.title}
                   />
-                </div>
-                <div className="col-md-12">
-                  <CustomInput
-                    type="text"
-                    id="lug"
-                    label="Slug"
-                    labelShow={false}
-                  />
+                  <small className="text-danger">
+                    {formik.touched.title && formik.errors.title ? (
+                      <div>{formik.errors.title}</div>
+                    ) : null}
+                  </small>
                 </div>
                 <div className="col-md-12">
                   <CustomInput
@@ -89,6 +137,8 @@ export default function AddBlog() {
                     id="shortDes"
                     label="Blog short des"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.shortDes}
                   />
                 </div>
               </div>
@@ -97,36 +147,15 @@ export default function AddBlog() {
               <h6>Description</h6>
               <div className="row">
                 <div className="col-md-12">
-                  <div className="mb-1">
-                    <button
-                      type="button"
-                      onClick={handleToggleView}
-                      className="btn p-0"
-                      style={{ fontSize: "10px" }}
-                    >
-                      {isHtmlView ? "Editor" : "HTML"}
-                    </button>
-                  </div>
-                  {isHtmlView ? (
-                    <textarea
-                      className="form-control mb-5"
-                      value={editorValue}
-                      onChange={(e) => setEditorValue(e.target.value)}
-                      rows="10"
-                      style={editorStyle}
-                    />
-                  ) : (
-                    <ReactQuill
-                      value={editorValue}
-                      onChange={setEditorValue}
-                      modules={modules}
-                      formats={formats}
-                      placeholder="Start writing..."
-                      theme="snow"
-                      style={editorStyle}
-                      className="mb-5"
-                    />
-                  )}
+                  <CustomEditor
+                    EditorId="description"
+                    name="description"
+                    placeholder="Start writing..."
+                    onChange={(value) =>
+                      formik.setFieldValue("description", value)
+                    }
+                    editorValue={formik.values.description}
+                  />
                 </div>
               </div>
             </div>
@@ -137,10 +166,12 @@ export default function AddBlog() {
               <div className="row">
                 <div className="col-md-12">
                   <CustomSelect
-                    id="shortDes"
+                    id="category"
                     label="Category"
                     labelShow={true}
-                    dataOption={selectOption}
+                    dataOption={blogCatList}
+                    onChange={formik.handleChange}
+                    value={formik.values.category}
                   />
                 </div>
                 <div className="col-md-12">
@@ -148,34 +179,43 @@ export default function AddBlog() {
                     id="author"
                     label="Author"
                     labelShow={true}
-                    dataOption={selectOption}
+                    dataOption={authorList}
+                    onChange={formik.handleChange}
+                    value={formik.values.author}
                   />
+                  <small className="text-danger">
+                    {formik.touched.author && formik.errors.author ? (
+                      <div>{formik.errors.author}</div>
+                    ) : null}
+                  </small>
                 </div>
                 <div className="col-md-12">
                   <CustomSelect
                     id="status"
                     label="Status"
                     labelShow={true}
-                    dataOption={selectOption}
+                    dataOption={statusList}
+                    onChange={formik.handleChange}
+                    value={formik.values.status}
                   />
                 </div>
 
                 <div className="col-md-12 d-md-flex justify-content-between ">
                   <button
                     type="submit"
-                    className="btn btn-success custom_button text-white mb-2"
+                    className="btn btn-success custom_button text-white mt-3"
                   >
                     Publish
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary custom_button text-white mb-2"
+                    className="btn btn-primary custom_button text-white mt-3"
                   >
                     Preview
                   </button>
                   <button
                     type="button"
-                    className="btn btn-danger custom_button text-white mb-2"
+                    className="btn btn-danger custom_button text-white mt-3"
                   >
                     Delete
                   </button>
@@ -191,6 +231,8 @@ export default function AddBlog() {
                     id="metaTitle"
                     label="Meta Title"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.metaTitle}
                   />
                 </div>
                 <div className="col-md-12">
@@ -199,6 +241,8 @@ export default function AddBlog() {
                     id="metaDes"
                     label="Meta Des"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.metaDes}
                   />
                 </div>
                 <div className="col-md-12">
@@ -207,6 +251,8 @@ export default function AddBlog() {
                     id="metaKey"
                     label="Meta Key"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.metaKey}
                   />
                 </div>
                 <div className="col-md-12">
@@ -214,8 +260,18 @@ export default function AddBlog() {
                     id="isIndexed"
                     label="Indexed"
                     labelShow={false}
-                    dataOption={selectOption}
+                    dataOption={selectIndex}
+                    onChange={formik.handleChange}
+                    value={formik.values.indexed}
                   />
+                </div>
+              </div>
+            </div>
+            <div className="card border-0 p-4 mb-3">
+              <h6>Blog Images</h6>
+              <div className="row">
+                <div className="col-md-12">
+                  <CustomUpload fileList={fileList} setFileList={setFileList} />
                 </div>
               </div>
             </div>

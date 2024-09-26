@@ -1,55 +1,76 @@
 import { Table } from "antd";
+import { ColumnsType } from "antd/es/table";
 import React, { useEffect } from "react";
-import  { ColumnsType } from "antd/es/table";
-import { useDispatch, useSelector } from "react-redux";
-import { getColorList } from "../features/color/colorSlice";
-import { Link } from "react-router-dom";
-import { MdDelete } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
-
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { getColorList } from "../features/color/colorSlice";
 
 interface DataType {
   key: React.Key;
-  name:string,
-  action:string
+  name: string;
+  action: string;
 }
 
 const columns: ColumnsType<DataType> = [
   {
-    title:"Name",
+    title: "S.N.",
+    dataIndex: "key",
+    sorter: (a: DataType, b: DataType) => a.key - b.key,
+  },
+  {
+    title: "Name",
     dataIndex: "name",
-    sorter: (a: DataType, b: DataType) => (a.name).localeCompare(b.name),
+    sorter: (a: DataType, b: DataType) => a.name.localeCompare(b.name),
   },
   {
     title: "Action",
     dataIndex: "action",
-  }
-]
+  },
+];
 
-const onChange: TableProps<DataType>["onChange"] =(pagination, filters, sorter, extra) => {
-  console.log("params", pagination,filters,sorter,extra);
-}
+const onChange: TableProps<DataType>["onChange"] = (
+  pagination,
+  filters,
+  sorter,
+  extra
+) => {
+  console.log("params", pagination, filters, sorter, extra);
+};
 
 export default function ColorList() {
   const dispatch = useDispatch();
   const getColorsList = useSelector((state) => state.color.data || []);
-  console.log(getColorsList);
-  
-  useEffect(()=>{
+
+  useEffect(() => {
     dispatch(getColorList());
-  },[dispatch]);
-  const data: DataType[] = getColorsList.map((row, index)=>(
-    {
-      key: index,
-      name:row.title,
-      action:(
-        <>
-        <Link className="btn m-1 bg-primary text-white" to="/"><FaRegEdit/></Link>
-        <Link className="btn m-1 bg-primary text-white" to="/"><MdDelete/></Link>
-        </>
-      )
-    }
-  ))
+  }, [dispatch]);
+  const data: DataType[] = getColorsList.map((row, index) => ({
+    key: index + 1,
+    name: (
+      <div className="d-flex align-items-center gap-2">
+        <div
+          style={{
+            width: "10px",
+            height: "10px",
+            background: `#${row.colorCode}`,
+          }}
+        />
+        {row.title}
+      </div>
+    ),
+    action: (
+      <>
+        <Link className="btn m-1 bg-primary text-white" to="/">
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1 bg-primary text-white" to="/">
+          <MdDelete />
+        </Link>
+      </>
+    ),
+  }));
   return (
     <div>
       <h3 className="mb-5">Color List</h3>

@@ -2,18 +2,19 @@ import axios from "axios";
 import { base_url } from "../../utils/base_url";
 import { headerConfig } from "../../utils/headerConfig";
 
-export const getBlogs = async () => {
+export const getCoupon = async () => {
   try {
-    const res = await axios.get(`${base_url}blog`);
-    return res.data;
+    const response = await axios.get(`${base_url}coupon`);
+    return response.data;
   } catch (error) {
     throw error.response?.data?.message || error.message;
   }
 };
+
 // Add a new brand
-const createBlog = async (data) => {
+const createCoupon = async (data) => {
   try {
-    const response = await axios.post(`${base_url}blog`, data, headerConfig);
+    const response = await axios.post(`${base_url}coupon`, data, headerConfig);
     console.log(response);
 
     return response.data; // Assuming response.data contains the added brand info
@@ -22,9 +23,9 @@ const createBlog = async (data) => {
   }
 };
 
-const blogServices = {
-  getBlogs,
-  createBlog,
+const couponService = {
+  getCoupon,
+  createCoupon,
 };
 
-export default blogServices;
+export default couponService;

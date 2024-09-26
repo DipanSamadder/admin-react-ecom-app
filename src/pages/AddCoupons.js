@@ -1,67 +1,96 @@
-import React, { useState } from "react";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import { useFormik } from "formik";
+import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
+import { createCoupons, resetCoupon } from "../features/coupon/couponSlice";
+import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddCoupons() {
-  const selectOption = [
-    { key: "enternentment", value: "Entertainment" },
-    { key: "comady", value: "Comedy" },
-    { key: "fun", value: "Funny" },
-    { key: "romance", value: "Romance" },
-  ];
-  const [editorValue, setEditorValue] = useState(""); // State to hold editor content
-  const [isHtmlView, setIsHtmlView] = useState(false); // State to toggle between editor and HTML view
-  const editorStyle = { height: "300px" };
-  // Modules for ReactQuill
-  const modules = {
-    toolbar: [
-      [{ header: "1" }, { header: "2" }, { font: [] }],
-      [{ size: [] }],
-      ["bold", "italic", "underline", "strike", "blockquote"],
-      [{ list: "ordered" }, { list: "bullet" }],
-      [{ script: "sub" }, { script: "super" }],
-      [{ indent: "-1" }, { indent: "+1" }],
-      [{ direction: "rtl" }],
-      [{ color: [] }, { background: [] }],
-      [{ align: [] }],
-      ["link", "image", "video"],
-      ["clean"],
-    ],
-  };
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-  // Formats for ReactQuill
-  const formats = [
-    "header",
-    "font",
-    "size",
-    "bold",
-    "italic",
-    "underline",
-    "strike",
-    "blockquote",
-    "list",
-    "bullet",
-    "script",
-    "indent",
-    "direction",
-    "color",
-    "background",
-    "align",
-    "link",
-    "image",
-    "video",
+  const customerList = useSelector((state) => state.customer.customers || []);
+  const [toastMessage, setTostMessage] = useState(false);
+  const newCoupon = useSelector((state) => state.coupon);
+  const { isSuccess, isError, createCouponData, message } = newCoupon;
+
+  const statusList = [
+    { key: true, value: "Publish" },
+    { key: false, value: "Private" },
   ];
 
-  // Handle the toggle between editor and HTML view
-  const handleToggleView = () => {
-    setIsHtmlView(!isHtmlView);
-  };
+  let schemaValidation = Yup.object({
+    name: Yup.string().required("Title is required"),
+    author: Yup.string().required("Author is required"),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      name: "",
+      expiry: "",
+      discount: "",
+      author: "",
+      status: "",
+    },
+    validationSchema: schemaValidation,
+    onSubmit: (values) => {
+      setTostMessage(true);
+      dispatch(createCoupons(values));
+    },
+  });
+
+  useEffect(() => {
+    dispatch(getAllUser());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && createCouponData) {
+        setTostMessage(false);
+        toast.success(message);
+        formik.resetForm();
+        // Delay navigation by 3 seconds
+        setTimeout(() => {
+          navigate("/admin/coupon-list");
+          dispatch(resetCoupon());
+        }, 1000); // 3000 milliseconds = 3 seconds
+      }
+
+      if (isError) {
+        toast.error(message);
+        dispatch(resetCoupon());
+      }
+    }
+  }, [
+    formik,
+    isSuccess,
+    isError,
+    createCouponData,
+    message,
+    toastMessage,
+    navigate,
+    dispatch,
+  ]);
+
+  const authorOptions = useMemo(
+    () =>
+      customerList
+        .filter((val) => val.role === "admin")
+        .map((val) => ({
+          key: val._id,
+          value: `${val.firstname} ${val.lastname}`,
+        })),
+    [customerList]
+  );
+
   return (
     <div>
       <h3 className="mb-5">Add Coupon</h3>
-      <form>
+      <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
             <div className="card border-0 p-4 mb-3">
@@ -70,63 +99,37 @@ export default function AddCoupons() {
                 <div className="col-md-12">
                   <CustomInput
                     type="text"
-                    id="title"
-                    label="Blog Title"
+                    id="name"
+                    label="Coupon Name"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.name}
+                  />
+                  <small className="text-danger">
+                    {formik.touched.name && formik.errors.name ? (
+                      <div>{formik.errors.name}</div>
+                    ) : null}
+                  </small>
+                </div>
+                <div className="col-md-12">
+                  <CustomInput
+                    type="text"
+                    id="expiry"
+                    label="Expiry"
+                    labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.expiry}
                   />
                 </div>
                 <div className="col-md-12">
                   <CustomInput
                     type="text"
-                    id="lug"
-                    label="Slug"
+                    id="discount"
+                    label="Discount Amount"
                     labelShow={false}
+                    onChange={formik.handleChange}
+                    value={formik.values.discount}
                   />
-                </div>
-                <div className="col-md-12">
-                  <CustomInput
-                    type="text"
-                    id="shortDes"
-                    label="Blog short des"
-                    labelShow={false}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="card border-0 px-4 pt-4 pb-5 mb-3">
-              <h6>Description</h6>
-              <div className="row">
-                <div className="col-md-12">
-                  <div className="mb-1">
-                    <button
-                      type="button"
-                      onClick={handleToggleView}
-                      className="btn p-0"
-                      style={{ fontSize: "10px" }}
-                    >
-                      {isHtmlView ? "Editor" : "HTML"}
-                    </button>
-                  </div>
-                  {isHtmlView ? (
-                    <textarea
-                      className="form-control mb-5"
-                      value={editorValue}
-                      onChange={(e) => setEditorValue(e.target.value)}
-                      rows="10"
-                      style={editorStyle}
-                    />
-                  ) : (
-                    <ReactQuill
-                      value={editorValue}
-                      onChange={setEditorValue}
-                      modules={modules}
-                      formats={formats}
-                      placeholder="Start writing..."
-                      theme="snow"
-                      style={editorStyle}
-                      className="mb-5"
-                    />
-                  )}
                 </div>
               </div>
             </div>
@@ -137,85 +140,50 @@ export default function AddCoupons() {
               <div className="row">
                 <div className="col-md-12">
                   <CustomSelect
-                    id="shortDes"
-                    label="Category"
-                    labelShow={true}
-                    dataOption={selectOption}
-                  />
-                </div>
-                <div className="col-md-12">
-                  <CustomSelect
                     id="author"
                     label="Author"
                     labelShow={true}
-                    dataOption={selectOption}
+                    dataOption={authorOptions}
+                    onChange={formik.handleChange}
+                    value={formik.values.author}
                   />
+
+                  <small className="text-danger">
+                    {formik.touched.author && formik.errors.author ? (
+                      <div>{formik.errors.author}</div>
+                    ) : null}
+                  </small>
                 </div>
                 <div className="col-md-12">
                   <CustomSelect
                     id="status"
                     label="Status"
                     labelShow={true}
-                    dataOption={selectOption}
+                    dataOption={statusList}
+                    onChange={formik.handleChange}
+                    value={formik.values.status}
                   />
                 </div>
 
                 <div className="col-md-12 d-md-flex justify-content-between ">
                   <button
                     type="submit"
-                    className="btn btn-success custom_button text-white mb-2"
+                    className="btn btn-success custom_button text-white mt-3"
                   >
                     Publish
                   </button>
                   <button
                     type="button"
-                    className="btn btn-primary custom_button text-white mb-2"
+                    className="btn btn-primary custom_button text-white mt-3"
                   >
                     Preview
                   </button>
                   <button
                     type="button"
-                    className="btn btn-danger custom_button text-white mb-2"
+                    className="btn btn-danger custom_button text-white mt-3"
                   >
                     Delete
                   </button>
-                </div>
-              </div>
-            </div>
-            <div className="card border-0 p-4 mb-3">
-              <h6>SEO</h6>
-              <div className="row">
-                <div className="col-md-12">
-                  <CustomInput
-                    type="text"
-                    id="metaTitle"
-                    label="Meta Title"
-                    labelShow={false}
-                  />
-                </div>
-                <div className="col-md-12">
-                  <CustomInput
-                    type="text"
-                    id="metaDes"
-                    label="Meta Des"
-                    labelShow={false}
-                  />
-                </div>
-                <div className="col-md-12">
-                  <CustomInput
-                    type="text"
-                    id="metaKey"
-                    label="Meta Key"
-                    labelShow={false}
-                  />
-                </div>
-                <div className="col-md-12">
-                  <CustomSelect
-                    id="isIndexed"
-                    label="Indexed"
-                    labelShow={false}
-                    dataOption={selectOption}
-                  />
                 </div>
               </div>
             </div>
