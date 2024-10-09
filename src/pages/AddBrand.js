@@ -1,28 +1,55 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
 import CustomUpload from "../components/CustomUpload";
-import { addBrand, resetbrandState } from "../features/brand/brandSlice";
+import {
+  addBrand,
+  getABrand,
+  resetbrandState,
+  updateBrand,
+} from "../features/brand/brandSlice";
 import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddBrand() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const getEditID = location.pathname.split("/")[3];
+
   const newBrand = useSelector((state) => state.brand);
   const customerList = useSelector((state) => state.customer.customers || []);
+  const [toastMessage, setTostMessage] = useState(false);
+  const {
+    isSuccess,
+    isError,
+    createBrandData,
+    message,
+    editData,
+    updatedData,
+  } = newBrand;
 
-  const { isSuccess, isError, createBrandData, message } = newBrand;
+  const defaultData = editData ? editData : updatedData;
+  console.log(defaultData);
+
+  useEffect(() => {
+    if (getEditID === undefined) {
+      formik.resetForm();
+      setFileList([]);
+    }
+  }, [getEditID]);
+
   const selectIndex = [
     { key: "Index", value: "Index" },
     { key: "No Index", value: "No Index" },
     { key: "Index Follow", value: "Index Follow" },
     { key: "No Index No Follow", value: "No Index No Follow" },
   ];
+
   const statusList = [
     { key: true, value: "Publish" },
     { key: false, value: "Private" },
@@ -39,44 +66,119 @@ export default function AddBrand() {
         })),
     [customerList]
   );
+  console.log(fileList);
+
   let schemaValidation = Yup.object({
     title: Yup.string().required("Title is required"),
     author: Yup.string().required("Author is required"),
   });
+  const showImage =
+    getEditID !== undefined && defaultData?.images
+      ? defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }))
+      : [];
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      if (defaultData?.images) {
+        const updatedImages = defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }));
+        setFileList(updatedImages);
+      }
+    } else {
+      setFileList([]);
+    }
+  }, [getEditID, defaultData]);
 
   const formik = useFormik({
     initialValues: {
-      title: "",
-      shortDes: "",
-      author: "",
-      status: "",
-      metaDes: "",
-      metaKey: "",
-      metaTitle: "",
-      indexed: "",
-      images: [],
+      title: getEditID !== undefined ? defaultData?.title || "" : "",
+      shortDes: getEditID !== undefined ? defaultData?.shortDes || "" : "",
+      author: getEditID !== undefined ? defaultData?.author || "" : "",
+      status: getEditID !== undefined ? defaultData?.status || "" : "",
+      metaDes: getEditID !== undefined ? defaultData?.metaDes || "" : "",
+      metaKey: getEditID !== undefined ? defaultData?.metaKey || "" : "",
+      metaTitle: getEditID !== undefined ? defaultData?.metaTitle || "" : "",
+      isIndexed: getEditID !== undefined ? defaultData?.isIndexed || "" : "",
+      images: showImage !== undefined ? showImage : [] || [],
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values) => {
-      values.images = fileList.map((file) => file.uid);
-      dispatch(addBrand(values));
+      values.images = fileList.map((file) => ({
+        public_id: file.uid, // Assuming `uid` is the identifier for public_id
+        url: file.url, // Assuming `publicId` is the URL or file path
+      }));
+      if (getEditID !== undefined) {
+        values.brand_id = getEditID;
+        setTostMessage(true);
+        dispatch(updateBrand(values));
+      } else {
+        setTostMessage(true);
+        dispatch(addBrand(values));
+      }
     },
   });
 
   useEffect(() => {
-    dispatch(getAllUser());
-    if (isSuccess && createBrandData && message !== null) {
-      toast.success(message);
-      setFileList([]);
-      formik.resetForm();
-      setTimeout(function () {
-        navigate("/admin/brand-list");
-        dispatch(resetbrandState());
-      }, 3000);
+    if (
+      getEditID !== undefined &&
+      showImage.length > 0 &&
+      fileList.length === 0
+    ) {
+      setFileList(showImage);
     }
-    if (isError) {
-      toast.error(message);
-      dispatch(resetbrandState());
+    if (toastMessage) {
+      if (isSuccess && updatedData && message !== null) {
+        setTostMessage(false);
+        toast.success(message);
+        setTimeout(function () {
+          navigate("/admin/brand-list");
+        }, 1000);
+        dispatch(resetbrandState());
+      }
+      if (isError) {
+        toast.error(message);
+      }
+    }
+  }, [
+    isSuccess,
+    isError,
+    updatedData,
+    message,
+    resetbrandState,
+    dispatch,
+    showImage,
+    setFileList,
+    getEditID,
+  ]);
+
+  useEffect(() => {
+    dispatch(getAllUser());
+    if (toastMessage) {
+      if (isSuccess && createBrandData && message !== null) {
+        toast.success(message);
+        setFileList([]);
+        formik.resetForm();
+        setTimeout(function () {
+          navigate("/admin/brand-list");
+          dispatch(resetbrandState());
+        }, 3000);
+      }
+      if (isError) {
+        toast.error(message);
+        dispatch(resetbrandState());
+      }
     }
   }, [
     isSuccess,
@@ -87,9 +189,16 @@ export default function AddBrand() {
     dispatch,
     navigate,
   ]);
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      dispatch(getABrand(getEditID));
+    }
+  }, [dispatch, getABrand, getEditID]);
+
   return (
     <div>
-      <h3 className="mb-5">Add Brand</h3>
+      <h3 className="mb-5">{getEditID !== undefined ? "Edit" : "Add"} Brand</h3>
       <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -160,11 +269,12 @@ export default function AddBrand() {
                 <div className="col-md-12">
                   <CustomSelect
                     id="isIndexed"
-                    label="Indexed"
+                    label="Select Indexed"
                     labelShow={false}
                     dataOption={selectIndex}
                     onChange={formik.handleChange}
-                    value={formik.values.indexed}
+                    onBlur={formik.handleBlur}
+                    value={formik.values.isIndexed}
                   />
                 </div>
               </div>
@@ -206,7 +316,7 @@ export default function AddBrand() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {getEditID !== undefined ? "Update" : "Publish"}
                   </button>
                   <button
                     type="button"

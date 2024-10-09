@@ -22,10 +22,35 @@ const addBrand = async (data) => {
   }
 };
 
+// get a  brand
+const getABrand = async (id) => {
+  try {
+    const response = await axios.get(`${base_url}brand/${id}`, headerConfig);
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
+
+// update brand
+const updateBrand = async (data) => {
+  try {
+    const response = await axios.put(
+      `${base_url}brand/${data.brand_id}`,
+      data,
+      headerConfig
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message;
+  }
+};
 // Export the service functions
 const brandServices = {
   getBrands,
   addBrand,
+  getABrand,
+  updateBrand,
 };
 
 export default brandServices;

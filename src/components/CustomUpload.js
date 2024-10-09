@@ -55,7 +55,7 @@ const CustomUpload = ({ fileList, setFileList }) => {
         if (!response.payload?.data) {
           throw new Error("Upload failed.");
         }
-        console.log(response.payload.message);
+        // console.log(response.payload.message);
 
         const uploadedFiles = response.payload.data;
         const newFileList = uploadedFiles.map((uploadedFile) => ({
@@ -66,11 +66,14 @@ const CustomUpload = ({ fileList, setFileList }) => {
           publicId: uploadedFile.publicId,
         }));
 
-        setFileList((prevFileList) => {
-          return prevFileList
-            .filter((item) => item.status !== "uploading")
-            .concat(newFileList);
-        });
+        setFileList((prev) => [...prev, ...newFileList]);
+
+        // setFileList((prevFileList) => {
+        //   return prevFileList
+        //     .filter((item) => item.status !== "uploading")
+        //     .concat(newFileList);
+        // });
+
         toast.success(response.payload.message);
       })
       .catch((err) => {
@@ -84,6 +87,7 @@ const CustomUpload = ({ fileList, setFileList }) => {
       <PlusOutlined /> <div style={{ marginTop: 8 }}> Upload </div>
     </button>
   );
+
   return (
     <div>
       <Upload
@@ -92,7 +96,6 @@ const CustomUpload = ({ fileList, setFileList }) => {
         fileList={fileList}
         onPreview={handlePreview}
         onRemove={handleRemove}
-        onChange={handleChange}
       >
         {fileList.length >= 8 ? null : uploadButton}
       </Upload>

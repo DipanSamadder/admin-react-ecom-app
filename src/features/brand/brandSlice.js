@@ -26,6 +26,22 @@ export const getBrands = createAsyncThunk(
   }
 );
 
+// Async thunk for fetching brands
+export const getABrand = createAsyncThunk(
+  "admin/get-brand",
+  async (payload, thunkApi) => {
+    try {
+      return await brandServices.getABrand(payload); // Expecting this function to return an array of brands
+    } catch (error) {
+      const serializableError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(serializableError);
+    }
+  }
+);
+
 // Async thunk for adding a brand
 export const addBrand = createAsyncThunk(
   "admin/add-brand",
@@ -42,6 +58,21 @@ export const addBrand = createAsyncThunk(
   }
 );
 
+// Async thunk for adding a brand
+export const updateBrand = createAsyncThunk(
+  "admin/update-brand",
+  async (data, thunkApi) => {
+    try {
+      return await brandServices.updateBrand(data); // Expecting this function to return the created brand
+    } catch (error) {
+      const serializableError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(serializableError);
+    }
+  }
+);
 // Brand slice
 export const brandSlice = createSlice({
   name: "brand",
@@ -52,6 +83,8 @@ export const brandSlice = createSlice({
       state.isError = false;
       state.message = "";
       state.createBrandData = "";
+      state.updatedData = "";
+      state.editData = "";
     },
   },
   extraReducers: (builder) => {
@@ -96,6 +129,50 @@ export const brandSlice = createSlice({
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload?.message || "Error adding brand";
+      });
+
+    // get A Brand async thunks
+    builder
+      .addCase(getABrand.pending, (state) => {
+        state.isLoading = true;
+        state.isSuccess = false;
+        state.isError = false;
+        state.message = "";
+      })
+      .addCase(getABrand.fulfilled, (state, action) => {
+        state.isSuccess = true;
+        state.isLoading = false;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.editData = action.payload.data;
+      })
+      .addCase(getABrand.rejected, (state, action) => {
+        state.isSuccess = false;
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Error show brand";
+      });
+
+    // get A Brand async thunks
+    builder
+      .addCase(updateBrand.pending, (state) => {
+        state.isLoading = true;
+        state.isSuccess = false;
+        state.isError = false;
+        state.message = "";
+      })
+      .addCase(updateBrand.fulfilled, (state, action) => {
+        state.isSuccess = true;
+        state.isLoading = false;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.updatedData = action.payload.data;
+      })
+      .addCase(updateBrand.rejected, (state, action) => {
+        state.isSuccess = false;
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Error update brand";
       });
   },
 });

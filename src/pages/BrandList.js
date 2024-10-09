@@ -49,6 +49,7 @@ const onChange: TableProps<DataType>["onChange"] = (
 ) => {
   console.log("params", pagination, filters, sorter, extra);
 };
+
 export default function BrandList() {
   const dispatch = useDispatch();
 
@@ -60,12 +61,21 @@ export default function BrandList() {
 
   const data: DataType[] = getBrandList.map((brand: any, index: any) => ({
     key: index + 1,
-    image: brand.images,
+    image: (
+      <img
+        src={brand.images[0]?.url}
+        alt={brand.images[0]?.public_id}
+        className="listing-img-size"
+      />
+    ),
     title: brand.title,
-    shortDes: brand.parent,
+    shortDes: brand.shortDes,
     action: (
       <>
-        <Link className="btn m-1 bg-primary text-white" to="/edit/">
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/brand/${brand._id}`}
+        >
           <FaRegEdit />
         </Link>
         <Link className="btn m-1  bg-danger text-white" to="/delete/">
