@@ -55,6 +55,7 @@ const onChange: TableProps<DataType>["onChange"] = (
 ) => {
   console.log("params", pagination, filters, sorter, extra);
 };
+
 export default function CategoryList() {
   const dispatch = useDispatch();
 

@@ -41,36 +41,44 @@ const onChange: TableProps<DataType>["onChange"] = (
 
 export default function ColorList() {
   const dispatch = useDispatch();
-  const getColorsList = useSelector((state) => state.color.data || []);
+  const getColorsList = useSelector((state: any) => state.color?.data || []);
+  console.log(`${getColorsList} --------------`);
 
   useEffect(() => {
     dispatch(getColorList());
   }, [dispatch]);
-  const data: DataType[] = getColorsList.map((row, index) => ({
-    key: index + 1,
-    name: (
-      <div className="d-flex align-items-center gap-2">
-        <div
-          style={{
-            width: "10px",
-            height: "10px",
-            background: `#${row.colorCode}`,
-          }}
-        />
-        {row.title}
-      </div>
-    ),
-    action: (
-      <>
-        <Link className="btn m-1 bg-primary text-white" to="/">
-          <FaRegEdit />
-        </Link>
-        <Link className="btn m-1 bg-primary text-white" to="/">
-          <MdDelete />
-        </Link>
-      </>
-    ),
-  }));
+
+  const data: DataType[] = Array.isArray(getColorsList)
+    ? getColorsList.map((row: any, index: any) => ({
+        key: index + 1,
+        name: (
+          <div className="d-flex align-items-center gap-2">
+            <div
+              style={{
+                width: "10px",
+                height: "10px",
+                background: `#${row.colorCode}`,
+              }}
+            />
+            {row.title}
+          </div>
+        ),
+        action: (
+          <>
+            <Link
+              className="btn m-1 bg-primary text-white"
+              to={`/admin/color/${row._id}`}
+            >
+              <FaRegEdit />
+            </Link>
+            <Link className="btn m-1 bg-primary text-white" to="/">
+              <MdDelete />
+            </Link>
+          </>
+        ),
+      }))
+    : [];
+
   return (
     <div>
       <h3 className="mb-5">Color List</h3>

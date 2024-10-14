@@ -39,6 +39,35 @@ export const createColor = createAsyncThunk(
   }
 );
 
+export const getAColor = createAsyncThunk(
+  "admin/get-a-color",
+  async (id, thunkApi) => {
+    try {
+      return await colorService.getAColor(id);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
+
+export const updateColor = createAsyncThunk(
+  "admin/update-color",
+  async (payload, thunkApi) => {
+    try {
+      return await colorService.updateColor(payload);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
 const colorSlice = createSlice({
   name: "color",
   initialState,
@@ -49,6 +78,8 @@ const colorSlice = createSlice({
       state.isSuccess = false;
       state.message = "";
       state.createColorData = "";
+      state.EditColorData = "";
+      state.UpdateColorData = "";
     },
   },
   extraReducers: (builder) => {
@@ -60,7 +91,7 @@ const colorSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.data = action.payload;
+        state.data = action.payload?.data;
         state.message = action.payload?.message;
       })
       .addCase(getColorList.rejected, (state, action) => {
@@ -69,6 +100,7 @@ const colorSlice = createSlice({
         state.isSuccess = false;
         state.message = action.payload?.message || "Error adding color";
       });
+
     //for add
     builder
       .addCase(createColor.pending, (state) => {
@@ -82,6 +114,44 @@ const colorSlice = createSlice({
         state.createColorData = action.payload;
       })
       .addCase(createColor.rejected, (state, action) => {
+        state.isError = true;
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.message = action.payload?.message || "Error adding color";
+      });
+
+    //for get a color
+    builder
+      .addCase(getAColor.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getAColor.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.EditColorData = action.payload?.data;
+      })
+      .addCase(getAColor.rejected, (state, action) => {
+        state.isError = true;
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.message = action.payload?.message || "Error adding color";
+      });
+
+    //for update color
+    builder
+      .addCase(updateColor.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateColor.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.UpdateColorData = action.payload;
+      })
+      .addCase(updateColor.rejected, (state, action) => {
         state.isError = true;
         state.isLoading = false;
         state.isSuccess = false;

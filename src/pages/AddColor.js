@@ -1,22 +1,54 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
-import { createColor, resetColorData } from "../features/color/colorSlice";
+import {
+  createColor,
+  getAColor,
+  resetColorData,
+  updateColor,
+} from "../features/color/colorSlice";
 import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddColor() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const getEditID = location.pathname.split("/")[3];
+  const [action, setAction] = useState("Add");
 
   const customerList = useSelector((state) => state.customer.customers || []);
   const [toastMessage, setTostMessage] = useState(false);
   const newColor = useSelector((state: any) => state.color);
-  const { isSuccess, isError, createColorData, message } = newColor;
+  const {
+    isSuccess,
+    isError,
+    createColorData,
+    message,
+    EditColorData,
+    UpdateColorData,
+  } = newColor;
+
+  const defaultData = EditColorData || "";
+  console.log(EditColorData);
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      setAction("Update");
+    } else {
+      setAction("Add");
+    }
+  }, [getEditID]);
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      dispatch(getAColor(getEditID));
+    }
+  }, [getAColor, dispatch, getEditID]);
 
   const statusList = [
     { key: true, value: "Publish" },
@@ -30,22 +62,54 @@ export default function AddColor() {
 
   const formik = useFormik({
     initialValues: {
-      title: "",
-      colorCode: "",
-      author: "",
-      status: "",
+      title: getEditID !== undefined ? defaultData?.title || "" : "",
+      colorCode: getEditID !== undefined ? defaultData?.colorCode || "" : "",
+      author: getEditID !== undefined ? defaultData?.author || "" : "",
+      status: getEditID !== undefined ? defaultData?.status || "" : "",
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values) => {
       setTostMessage(true);
-
-      dispatch(createColor(values));
+      if (getEditID === undefined) {
+        dispatch(createColor(values));
+      } else {
+        values._id = getEditID;
+        dispatch(updateColor(values));
+      }
     },
   });
 
   useEffect(() => {
     dispatch(getAllUser());
   }, [dispatch]);
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && UpdateColorData && message !== null) {
+        setTostMessage(false);
+        toast.success(message);
+        // Delay navigation by 3 seconds
+        setTimeout(() => {
+          navigate("/admin/color-list");
+          dispatch(resetColorData());
+        }, 3000); // 3000 milliseconds = 3 seconds
+      }
+
+      if (isError) {
+        toast.error(message);
+        dispatch(resetColorData());
+      }
+    }
+  }, [
+    isSuccess,
+    isError,
+    UpdateColorData,
+    message,
+    resetColorData,
+    toastMessage,
+    navigate,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -91,7 +155,7 @@ export default function AddColor() {
 
   return (
     <div>
-      <h3 className="mb-5">Add Color</h3>
+      <h3 className="mb-5">{action} Color</h3>
       <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -167,7 +231,7 @@ export default function AddColor() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {action}
                   </button>
                   <button
                     type="button"
