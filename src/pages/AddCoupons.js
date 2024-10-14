@@ -1,23 +1,46 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
-import { createCoupons, resetCoupon } from "../features/coupon/couponSlice";
+import {
+  createCoupons,
+  getACoupons,
+  resetCoupon,
+  updateCoupons,
+} from "../features/coupon/couponSlice";
 import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddCoupons() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const getEditId = location.pathname.split("/")[3];
+  const [action, setAction] = useState("Add");
   const customerList = useSelector((state) => state.customer.customers || []);
   const [toastMessage, setTostMessage] = useState(false);
   const newCoupon = useSelector((state) => state.coupon);
-  const { isSuccess, isError, createCouponData, message } = newCoupon;
+  const {
+    isSuccess,
+    isError,
+    createCouponData,
+    message,
+    EditCouponData,
+    UpdateCouponData,
+  } = newCoupon;
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      dispatch(getACoupons(getEditId));
+      setAction("Update");
+    } else {
+      setAction("Add");
+    }
+  }, [dispatch, getACoupons, getEditId]);
 
+  const defaultData = EditCouponData || UpdateCouponData;
   const statusList = [
     { key: true, value: "Publish" },
     { key: false, value: "Private" },
@@ -30,23 +53,56 @@ export default function AddCoupons() {
 
   const formik = useFormik({
     initialValues: {
-      name: "",
-      expiry: "",
-      discount: "",
-      author: "",
-      status: "",
+      name: getEditId !== undefined ? defaultData?.name || "" : "",
+      expiry: getEditId !== undefined ? defaultData?.expiry || "" : "",
+      discount: getEditId !== undefined ? defaultData?.discount || "" : "",
+      author: getEditId !== undefined ? defaultData?.author || "" : "",
+      status: getEditId !== undefined ? defaultData?.status || "" : "",
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values) => {
       setTostMessage(true);
-      dispatch(createCoupons(values));
+      if (getEditId !== undefined) {
+        values._id = getEditId;
+        dispatch(updateCoupons(values));
+      } else {
+        dispatch(createCoupons(values));
+      }
     },
   });
 
   useEffect(() => {
     dispatch(getAllUser());
   }, [dispatch]);
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && UpdateCouponData && message !== null) {
+        setTostMessage(false);
+        toast.success(message);
+        formik.resetForm();
+        // Delay navigation by 3 seconds
+        setTimeout(() => {
+          navigate("/admin/coupon-list");
+          dispatch(resetCoupon());
+        }, 1000); // 3000 milliseconds = 3 seconds
+      }
 
+      if (isError && message !== null) {
+        toast.error(message);
+        dispatch(resetCoupon());
+      }
+    }
+  }, [
+    formik,
+    isSuccess,
+    isError,
+    UpdateCouponData,
+    message,
+    toastMessage,
+    navigate,
+    dispatch,
+  ]);
   useEffect(() => {
     if (toastMessage) {
       if (isSuccess && createCouponData) {

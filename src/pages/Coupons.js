@@ -66,7 +66,10 @@ export default function Coupons() {
     discount: row.discount,
     action: (
       <>
-        <Link className="btn m-1 bg-primary text-white" to="/">
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/coupon/${row._id}`}
+        >
           <FaRegEdit />
         </Link>
         <Link className="btn m-1 bg-primary text-white" to="/">

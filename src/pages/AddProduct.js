@@ -469,7 +469,7 @@ export default function AddProduct() {
                     labelShow={false}
                     dataOption={selectIndex}
                     onChange={formik.handleChange}
-                    value={formik.values.indexed}
+                    value={formik.values.isIndexed}
                   />
                 </div>
               </div>

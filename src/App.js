@@ -45,11 +45,13 @@ function App() {
           <Route path="color/:id" element={<AddColor />} />
           <Route path="color-list" element={<ColorList />} />
           <Route path="blog" element={<AddBlog />} />
+          <Route path="blog/:id" element={<AddBlog />} />
           <Route path="blog-list" element={<BlogList />} />
           <Route path="blog-category" element={<AddBlogCategory />} />
           <Route path="blog-category/:id" element={<AddBlogCategory />} />
           <Route path="blog-category-list" element={<BlogCategory />} />
           <Route path="coupon" element={<AddCoupons />} />
+          <Route path="coupon/:id" element={<AddCoupons />} />
           <Route path="coupon-list" element={<Coupons />} />
           <Route path="orders" element={<Orders />} />
           <Route path="Customers" element={<Customers />} />

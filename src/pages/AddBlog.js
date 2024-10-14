@@ -1,14 +1,19 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomEditor from "../components/CustomEditor";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
 import CustomUpload from "../components/CustomUpload";
-import { createBlogNew, resetBlogData } from "../features/blog/blogSlice";
+import {
+  createBlogNew,
+  getABlog,
+  resetBlogData,
+  updateBlog,
+} from "../features/blog/blogSlice";
 import { blogCategory } from "../features/blogCate/blogCategorySlice";
 import { getAllUser } from "../features/customers/customerSlice";
 
@@ -16,9 +21,22 @@ export default function AddBlog() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const blogCateList = useSelector((state) => state.bcat.data || []);
+  const location = useLocation();
+  const getEditId = location.pathname.split("/")[3];
+  const [action, setAction] = useState("Add");
+
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      dispatch(getABlog(getEditId));
+      setAction("Update");
+    } else {
+      setAction("Add");
+    }
+  }, [dispatch, getABlog, getEditId]);
 
   const customerList = useSelector((state) => state.customer.customers || []);
   const [toastMessage, setTostMessage] = useState(false);
+
   const authorList = useMemo(
     () =>
       customerList
@@ -40,8 +58,16 @@ export default function AddBlog() {
   );
 
   const addBlog = useSelector((state) => state.blog || []);
-  const { isSuccess, isError, message, createBlogData } = addBlog;
+  const {
+    isSuccess,
+    isError,
+    message,
+    createBlogData,
+    EditBlogData,
+    UpdateBlogData,
+  } = addBlog;
 
+  const defaultData = EditBlogData || UpdateBlogData;
   const selectIndex = [
     { key: "Index", value: "Index" },
     { key: "No Index", value: "No Index" },
@@ -60,32 +86,86 @@ export default function AddBlog() {
   });
 
   const [fileList, setFileList] = useState([]);
+  const showImage =
+    getEditId !== undefined && defaultData?.images
+      ? defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }))
+      : [];
 
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      if (defaultData?.images) {
+        const updatedImages = defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }));
+        setFileList(updatedImages);
+      }
+    } else {
+      setFileList([]);
+    }
+  }, [getEditId, defaultData]);
   const formik = useFormik({
     initialValues: {
-      title: "",
-      shortDes: "",
-      description: "",
-      category: "",
-      brand: "",
-      color: "",
-      price: "",
-      quantity: "",
-      author: "",
-      status: "",
-      metaDes: "",
-      metaKey: "",
-      metaTitle: "",
-      indexed: "",
-      images: [],
+      title: getEditId !== undefined ? defaultData?.title || "" : "",
+      shortDes: getEditId !== undefined ? defaultData?.shortDes || "" : "",
+      description:
+        getEditId !== undefined ? defaultData?.description || "" : "",
+      category: getEditId !== undefined ? defaultData?.category || "" : "",
+      brand: getEditId !== undefined ? defaultData?.brand || "" : "",
+      color: getEditId !== undefined ? defaultData?.color || "" : "",
+      price: getEditId !== undefined ? defaultData?.price || "" : "",
+      quantity: getEditId !== undefined ? defaultData?.quantity || "" : "",
+      author: getEditId !== undefined ? defaultData?.author || "" : "",
+      status: getEditId !== undefined ? defaultData?.status || "" : "",
+      metaDes: getEditId !== undefined ? defaultData?.metaDes || "" : "",
+      metaKey: getEditId !== undefined ? defaultData?.metaKey || "" : "",
+      metaTitle: getEditId !== undefined ? defaultData?.metaTitle || "" : "",
+      isIndexed: getEditId !== undefined ? defaultData?.isIndexed || "" : "",
+      images: showImage !== undefined ? showImage : [] || [],
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values, { resetForm }) => {
-      values.images = fileList.map((file) => file.uid);
+      values.images = fileList.map((file) => ({
+        public_id: file.uid,
+        url: file.url,
+      }));
       setTostMessage(true);
-      dispatch(createBlogNew(values));
+      if (getEditId !== undefined) {
+        values._id = getEditId;
+        dispatch(updateBlog(values));
+      } else {
+        dispatch(createBlogNew(values));
+      }
     },
   });
+
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && UpdateBlogData && message !== null) {
+        setTostMessage(false);
+        toast.success(message);
+        formik.resetForm();
+        dispatch(resetBlogData());
+        setTimeout(navigate("/admin/blog-list"), 1000);
+      }
+
+      if (isError && message !== null) {
+        setTostMessage(false);
+        dispatch(resetBlogData());
+        toast.error(message);
+      }
+    }
+  }, [isSuccess, isError, message, UpdateBlogData, dispatch]);
 
   useEffect(() => {
     dispatch(getAllUser());
@@ -109,7 +189,7 @@ export default function AddBlog() {
 
   return (
     <div>
-      <h3 className="mb-5">Add Blog</h3>
+      <h3 className="mb-5">{action} Blog</h3>
       <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -205,7 +285,7 @@ export default function AddBlog() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {action}
                   </button>
                   <button
                     type="button"
@@ -262,7 +342,7 @@ export default function AddBlog() {
                     labelShow={false}
                     dataOption={selectIndex}
                     onChange={formik.handleChange}
-                    value={formik.values.indexed}
+                    value={formik.values.isIndexed}
                   />
                 </div>
               </div>

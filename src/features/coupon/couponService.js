@@ -23,9 +23,37 @@ const createCoupon = async (data) => {
   }
 };
 
+// get a coupon
+const getACoupon = async (id) => {
+  try {
+    const response = await axios.get(`${base_url}coupon/${id}`, headerConfig);
+    console.log(response);
+
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
+// update coupon
+const updateCoupon = async (payload) => {
+  try {
+    const response = await axios.put(
+      `${base_url}coupon/${payload._id}`,
+      payload,
+      headerConfig
+    );
+    console.log(response);
+
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
 const couponService = {
   getCoupon,
   createCoupon,
+  getACoupon,
+  updateCoupon,
 };
 
 export default couponService;

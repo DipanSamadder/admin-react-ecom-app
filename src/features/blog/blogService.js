@@ -22,9 +22,35 @@ const createBlog = async (data) => {
   }
 };
 
+// Get a  Blog
+const getABlog = async (id) => {
+  try {
+    const response = await axios.get(`${base_url}blog/${id}`, headerConfig);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message;
+  }
+};
+
+// Get a  Blog
+const updateBlog = async (payload) => {
+  try {
+    const response = await axios.put(
+      `${base_url}blog/${payload._id}`,
+      payload,
+      headerConfig
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message;
+  }
+};
+
 const blogServices = {
   getBlogs,
   createBlog,
+  getABlog,
+  updateBlog,
 };
 
 export default blogServices;

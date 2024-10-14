@@ -39,6 +39,38 @@ export const createCoupons = createAsyncThunk(
     }
   }
 );
+
+export const getACoupons = createAsyncThunk(
+  "admin/get-a-coupon",
+  async (payload, thunkApi) => {
+    try {
+      return await couponService.getACoupon(payload);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
+
+export const updateCoupons = createAsyncThunk(
+  "admin/update-coupon",
+  async (payload, thunkApi) => {
+    try {
+      return await couponService.updateCoupon(payload);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
 export const couponSlice = createSlice({
   name: "coupon",
   initialState,
@@ -48,6 +80,8 @@ export const couponSlice = createSlice({
       state.isSuccess = false;
       state.isError = false;
       state.createCouponData = "";
+      state.EditCouponData = "";
+      state.UpdateCouponData = "";
       state.message = "";
     },
   },
@@ -60,7 +94,7 @@ export const couponSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.data = action.payload;
+        state.data = action.payload?.data;
       })
       .addCase(getCoupons.rejected, (state, action) => {
         state.isLoading = false;
@@ -78,10 +112,48 @@ export const couponSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.createCouponData = action.payload;
+        state.createCouponData = action.payload?.data;
         state.message = action.payload?.message;
       })
       .addCase(createCoupons.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for get category
+    builder
+      .addCase(getACoupons.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getACoupons.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.EditCouponData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(getACoupons.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for update category
+    builder
+      .addCase(updateCoupons.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateCoupons.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.UpdateCouponData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(updateCoupons.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;

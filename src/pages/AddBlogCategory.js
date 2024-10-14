@@ -125,8 +125,9 @@ export default function AddBlogCategory() {
       metaDes: getEditID !== undefined ? defaultData?.metaDes || "" : "",
       metaKey: getEditID !== undefined ? defaultData?.metaKey || "" : "",
       isIndexed: getEditID !== undefined ? defaultData?.isIndexed || "" : "",
-      images: [],
+      images: showImage !== undefined ? showImage : [] || [],
     },
+
     validationSchema: schemaValidation,
     enableReinitialize: true,
     onSubmit: (values) => {

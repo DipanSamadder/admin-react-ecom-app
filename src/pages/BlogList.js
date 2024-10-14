@@ -1,14 +1,12 @@
 import { Table } from "antd";
 
-import React, { useEffect } from "react";
-import { getBlogList } from "../features/blog/blogSlice";
-import { useDispatch, useSelector } from "react-redux";
 import { ColumnsType } from "antd/es/table";
-import { MdDelete } from "react-icons/md";
+import React, { useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
-import Link from "antd/es/typography/Link";
-
-
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { getBlogList } from "../features/blog/blogSlice";
 
 interface DataType {
   key: React.Key;
@@ -28,7 +26,8 @@ const columns: ColumnsType<DataType> = [
   {
     title: "Category",
     dataIndex: "category",
-    sorter: (a: DataType, b: DataType) => (a.category || "").localeCompare(b.category || ""),
+    sorter: (a: DataType, b: DataType) =>
+      (a.category || "").localeCompare(b.category || ""),
   },
   {
     title: "Slug",
@@ -48,7 +47,6 @@ const onChange = (pagination: any, filters: any, sorter: any, extra: any) => {
   console.log("params", pagination, filters, sorter, extra);
 };
 
-
 export default function BlogList() {
   const dispatch = useDispatch();
 
@@ -63,14 +61,27 @@ export default function BlogList() {
     key: index,
     title: row.title,
     slug: row.slug,
-    images: row.images,
+    images: row.images && (
+      <img
+        src={row.images[0]?.url}
+        alt={row.images[0]?.public_id}
+        className="listing-img-size"
+      />
+    ),
     category: row.category,
-    action:(
+    action: (
       <>
-        <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/blog/${row._id}`}
+        >
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+          <MdDelete />
+        </Link>
       </>
-    )
+    ),
   }));
 
   return (
