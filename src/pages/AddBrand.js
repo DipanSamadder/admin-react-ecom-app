@@ -66,12 +66,14 @@ export default function AddBrand() {
         })),
     [customerList]
   );
+
   console.log(fileList);
 
   let schemaValidation = Yup.object({
     title: Yup.string().required("Title is required"),
     author: Yup.string().required("Author is required"),
   });
+
   const showImage =
     getEditID !== undefined && defaultData?.images
       ? defaultData.images.map((img) => ({

@@ -36,6 +36,36 @@ export const createProCate = createAsyncThunk(
   }
 );
 
+export const getACate = createAsyncThunk(
+  "admin/get-a-pcat",
+  async (id, thunkApi) => {
+    try {
+      return await proCatService.getACategory(id);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
+
+export const updateProCate = createAsyncThunk(
+  "admin/update-pcat",
+  async (payload, thunkApi) => {
+    try {
+      return await proCatService.updateProCates(payload);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
+
 export const proCatSlice = createSlice({
   name: "pcategory",
   initialState,
@@ -45,6 +75,8 @@ export const proCatSlice = createSlice({
       state.isError = false;
       state.message = "";
       state.createProCateData = "";
+      state.updateProCateData = "";
+      state.editProCateData = "";
     },
   },
   extraReducers: (builder) => {
@@ -65,6 +97,7 @@ export const proCatSlice = createSlice({
         state.data = [];
         state.message = action.payload?.message;
       });
+
     //for add
     builder
       .addCase(createProCate.pending, (state) => {
@@ -78,6 +111,46 @@ export const proCatSlice = createSlice({
         state.message = action.payload?.message;
       })
       .addCase(createProCate.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.data = [];
+        state.message = action.payload?.message;
+      });
+
+    //for get a Category slice
+    builder
+      .addCase(getACate.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getACate.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.editProCateData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(getACate.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.data = [];
+        state.message = action.payload?.message;
+      });
+
+    //for update Category slice
+    builder
+      .addCase(updateProCate.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateProCate.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.updateProCateData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(updateProCate.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;

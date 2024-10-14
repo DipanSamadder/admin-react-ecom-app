@@ -1,15 +1,15 @@
 import { Table } from "antd";
+import { ColumnsType } from "antd/es/table";
 import React, { useEffect } from "react";
-import {useDispatch, useSelector} from "react-redux";
-import  { ColumnsType } from "antd/es/table";
-import { getProCate } from "../features/proCat/proCatSlice";
-import { MdDelete } from "react-icons/md";
 import { FaRegEdit } from "react-icons/fa";
-import {Link} from "react-router-dom";
-
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { getProCate } from "../features/proCat/proCatSlice";
 
 interface DataType {
   key: React.Key;
+  image: string;
   title: string;
   lavel: number;
   parent: number;
@@ -18,26 +18,34 @@ interface DataType {
 
 const columns: ColumnsType<DataType> = [
   {
+    title: "S.N",
+    dataIndex: "key",
+    sorter: (a: DateType, b: DateType) => a.key - b.key,
+  },
+  {
+    title: "Image",
+    dataIndex: "image",
+  },
+  {
     title: "Title",
     dataIndex: "title",
-    sorter: (a: DateType, b: DateType) => (a.title).localeCompare(b.title)
+    sorter: (a: DateType, b: DateType) => a.title.localeCompare(b.title),
   },
   {
     title: "Level",
     dataIndex: "level",
-    sorter: (a: DateType, b: DateType) => (a.level -b.level)
+    sorter: (a: DateType, b: DateType) => a.level - b.level,
   },
   {
     title: "Parent",
     dataIndex: "parent",
-    sorter: (a: DateType, b: DateType) => (a.parent-b.parent)
+    sorter: (a: DateType, b: DateType) => a.parent - b.parent,
   },
   {
     title: "Action",
     dataIndex: "action",
   },
 ];
-
 
 const onChange: TableProps<DataType>["onChange"] = (
   pagination,
@@ -50,25 +58,39 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function CategoryList() {
   const dispatch = useDispatch();
 
-  const getPCategory = useSelector((state:any)=> state.pcat.data  || []);
+  const getPCategory = useSelector((state: any) => state.pcat.data || []);
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(getProCate());
-  },[dispatch]);
+  }, [dispatch]);
 
+  const data: DataType[] = getPCategory.map((field: any, index: any) => ({
+    key: index + 1,
+    image: field.images && (
+      <img
+        src={field.images[0]?.url}
+        alt={field.images[0]?.public_id}
+        className="listing-img-size"
+      />
+    ),
+    title: field.title,
+    lavel: field.level,
+    parent: field.parent,
+    action: (
+      <>
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/category/${field._id}`}
+        >
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+          <MdDelete />
+        </Link>
+      </>
+    ),
+  }));
 
-const data: DataType[] = getPCategory.map((field: any, index:any)=> ({
-  key: index,
-  title: field.title,
-  lavel: field.level,
-  parent: field.parent, 
-  action:(
-    <>
-      <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
-      <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
-    </>
-  )
-}));
   return (
     <div>
       <h3 className="mb-5">Category List</h3>

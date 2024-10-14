@@ -1,26 +1,60 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
 import CustomSelect from "../components/CustomSelect";
 import CustomUpload from "../components/CustomUpload";
 import { getAllUser } from "../features/customers/customerSlice";
+
 import {
   createProCate,
+  getACate,
   resetProCateState,
+  updateProCate,
 } from "../features/proCat/proCatSlice";
 
 export default function AddCategory() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const getEditID = location.pathname.split("/")[3];
+  const [action, setAction] = useState("Add");
   const [fileList, setFileList] = useState([]);
   const customerList = useSelector((state) => state.customer.customers || []);
+
   const [toastMessage, setTostMessage] = useState(false);
   const newCate = useSelector((state: any) => state.pcat);
-  const { isSuccess, isError, createProCateData, message } = newCate;
+
+  const {
+    isSuccess,
+    isError,
+    createProCateData,
+    message,
+    editProCateData,
+    updateProCateData,
+  } = newCate;
+
+  const defaultData = editProCateData || updateProCateData;
+  console.log(defaultData);
+
+  useEffect(() => {
+    if (getEditID === undefined) {
+      setAction("Add");
+      formik.resetForm();
+      setFileList([]);
+      dispatch(resetProCateState());
+    }
+  }, [getEditID, resetProCateState]);
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      dispatch(getACate(getEditID));
+      setAction("Update");
+    }
+  }, [getEditID]);
 
   const selectIndex = [
     { key: "Index", value: "Index" },
@@ -28,6 +62,7 @@ export default function AddCategory() {
     { key: "Index Follow", value: "Index Follow" },
     { key: "No Index No Follow", value: "No Index No Follow" },
   ];
+
   const statusList = [
     { key: true, value: "Publish" },
     { key: false, value: "Private" },
@@ -37,29 +72,102 @@ export default function AddCategory() {
     title: Yup.string().required("Title is required"),
     author: Yup.string().required("Author is required"),
   });
+
+  const showImage =
+    getEditID !== undefined && defaultData?.images
+      ? defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }))
+      : [];
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      if (defaultData?.images) {
+        const updatedImages = defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }));
+        setFileList(updatedImages);
+      }
+    } else {
+      setFileList([]);
+    }
+  }, [getEditID, defaultData]);
   const formik = useFormik({
     initialValues: {
-      title: "",
-      shortDes: "",
-      author: "",
-      status: "",
-      metaDes: "",
-      metaKey: "",
-      metaTitle: "",
-      indexed: "",
-      images: [],
+      title: getEditID !== undefined ? defaultData?.title || "" : "",
+      shortDes: getEditID !== undefined ? defaultData?.shortDes || "" : "",
+      author: getEditID !== undefined ? defaultData?.author || "" : "",
+      status: getEditID !== undefined ? defaultData?.status || "" : "",
+      metaDes: getEditID !== undefined ? defaultData?.metaDes || "" : "",
+      metaKey: getEditID !== undefined ? defaultData?.metaKey || "" : "",
+      metaTitle: getEditID !== undefined ? defaultData?.metaTitle || "" : "",
+      indexed: getEditID !== undefined ? defaultData?.indexed || "" : "",
+      images: showImage !== undefined ? showImage : [] || [],
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values) => {
-      values.images = fileList.map((file) => file.uid);
-      setTostMessage(true);
-      dispatch(createProCate(values));
+      values.images = fileList.map((file) => ({
+        public_id: file.uid,
+        url: file.url,
+      }));
+      if (getEditID === undefined) {
+        setTostMessage(true);
+        dispatch(createProCate(values));
+      } else {
+        values._id = getEditID;
+        setTostMessage(true);
+        dispatch(updateProCate(values));
+      }
     },
   });
 
   useEffect(() => {
     dispatch(getAllUser());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (
+      getEditID !== undefined &&
+      showImage.length > 0 &&
+      fileList.length === 0
+    ) {
+      setFileList(showImage);
+    }
+    if (toastMessage) {
+      if (isSuccess && updateProCateData && message !== null) {
+        setTostMessage(false);
+        toast.success(message);
+        // Delay navigation by 3 seconds
+        setTimeout(() => {
+          navigate("/admin/category-list");
+          dispatch(resetProCateState());
+        }, 3000); // 3000 milliseconds = 3 seconds
+      }
+
+      if (isError) {
+        toast.error(message);
+        dispatch(resetProCateState());
+      }
+    }
+  }, [
+    isSuccess,
+    isError,
+    updateProCateData,
+    message,
+    resetProCateState,
+    toastMessage,
+    navigate,
+    dispatch,
+  ]);
 
   useEffect(() => {
     if (toastMessage) {
@@ -103,7 +211,7 @@ export default function AddCategory() {
 
   return (
     <div>
-      <h3 className="mb-5">Add Category</h3>
+      <h3 className="mb-5">{action} Category</h3>
       <form onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -220,7 +328,7 @@ export default function AddCategory() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {action}
                   </button>
                   <button
                     type="button"
