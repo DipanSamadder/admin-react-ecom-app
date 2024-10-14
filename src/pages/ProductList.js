@@ -1,13 +1,11 @@
 import { Table } from "antd";
-import React, { useEffect } from "react";
-import { getProducts } from "../features/product/productSlice";
-import { useDispatch, useSelector } from "react-redux";
 import type { ColumnsType } from "antd/es/table";
-import { MdDelete } from "react-icons/md";
+import React, { useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
-import Link from "antd/es/typography/Link";
-
-
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { getProducts } from "../features/product/productSlice";
 
 interface DataType {
   key: React.Key;
@@ -29,12 +27,14 @@ const columns: ColumnsType<DataType> = [
   {
     title: "Category",
     dataIndex: "category",
-    sorter: (a: DataType, b: DataType) => (a.category || "").localeCompare(b.category || ""),
+    sorter: (a: DataType, b: DataType) =>
+      (a.category || "").localeCompare(b.category || ""),
   },
   {
     title: "Brand",
     dataIndex: "brand",
-    sorter: (a: DataType, b: DataType) => (a.brand || "" ).localeCompare(b.brand || ""),
+    sorter: (a: DataType, b: DataType) =>
+      (a.brand || "").localeCompare(b.brand || ""),
   },
   {
     title: "Slug",
@@ -74,15 +74,28 @@ export default function ProductList() {
     title: product.title,
     slug: product.slug,
     price: product.price,
-    images: product.images,
+    images: product.images && (
+      <img
+        src={product.images[0]?.url}
+        alt={product.images[0]?.public_id}
+        className="listing-img-size"
+      />
+    ),
     category: product.category,
     brand: product.brand,
-    action:(
+    action: (
       <>
-        <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/product/${product._id}`}
+        >
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+          <MdDelete />
+        </Link>
       </>
-    )
+    ),
   }));
 
   return (

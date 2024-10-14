@@ -2,7 +2,7 @@ import { Select } from "antd";
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomEditor from "../components/CustomEditor";
@@ -13,10 +13,26 @@ import { getBrands } from "../features/brand/brandSlice";
 import { getColorList } from "../features/color/colorSlice";
 import { getAllUser } from "../features/customers/customerSlice";
 import { getProCate } from "../features/proCat/proCatSlice";
-import { addProducts } from "../features/product/productSlice";
+import {
+  addProducts,
+  getAProducts,
+  updateProducts,
+} from "../features/product/productSlice";
 export default function AddProduct() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [action, setAction] = useState("Add");
+  const getEditId = location.pathname.split("/")[3];
+
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      setAction("Update");
+    } else {
+      setAction("Add");
+    }
+  }, [getEditId]);
+
   const selectIndex = [
     { key: "Index", value: "Index" },
     { key: "No Index", value: "No Index" },
@@ -33,7 +49,24 @@ export default function AddProduct() {
   const getCateList = useSelector((state) => state.pcat.data || []);
   const customerList = useSelector((state) => state.customer.customers || []);
   const addPro = useSelector((state) => state.product || []);
-  const { isSuccess, isError, message, createProducts } = addPro;
+  const {
+    isSuccess,
+    isError,
+    message,
+    createProducts,
+    editProData,
+    updateProData,
+  } = addPro;
+  const [toastMessage, setTostMessage] = useState(false);
+  const defaultData = editProData || "";
+  console.log(defaultData);
+
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      dispatch(getAProducts(getEditId));
+    }
+  }, [dispatch, getEditId]);
+
   // Memoize derived data to prevent unnecessary re-renders
   const brandlist = useMemo(
     () =>
@@ -83,29 +116,67 @@ export default function AddProduct() {
   });
 
   const [fileList, setFileList] = useState([]);
+  const showImage =
+    getEditId !== undefined && defaultData?.images
+      ? defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }))
+      : [];
+
+  useEffect(() => {
+    if (getEditId !== undefined) {
+      if (defaultData?.images) {
+        const updatedImages = defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }));
+        setFileList(updatedImages);
+      }
+    } else {
+      setFileList([]);
+    }
+  }, [getEditId, defaultData]);
 
   const formik = useFormik({
     initialValues: {
-      title: "",
-      shortDes: "",
-      description: "",
-      category: "",
-      brand: "",
-      color: "",
-      price: "",
-      quantity: "",
-      author: "",
-      status: "",
-      metaDes: "",
-      metaKey: "",
-      metaTitle: "",
-      indexed: "",
-      images: [],
+      title: getEditId !== undefined ? defaultData?.title || "" : "",
+      shortDes: getEditId !== undefined ? defaultData?.shortDes || "" : "",
+      description:
+        getEditId !== undefined ? defaultData?.description || "" : "",
+      category: getEditId !== undefined ? defaultData?.category || "" : "",
+      brand: getEditId !== undefined ? defaultData?.brand || "" : "",
+      color: getEditId !== undefined ? defaultData?.color || "" : "",
+      price: getEditId !== undefined ? defaultData?.price || "" : "",
+      quantity: getEditId !== undefined ? defaultData?.quantity || "" : "",
+      author: getEditId !== undefined ? defaultData?.author || "" : "",
+      status: getEditId !== undefined ? defaultData?.status || "" : "",
+      metaDes: getEditId !== undefined ? defaultData?.metaDes || "" : "",
+      metaKey: getEditId !== undefined ? defaultData?.metaKey || "" : "",
+      metaTitle: getEditId !== undefined ? defaultData?.metaTitle || "" : "",
+      indexed: getEditId !== undefined ? defaultData?.indexed || "" : "",
+      images: showImage !== undefined ? showImage : [] || [],
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values, { resetForm }) => {
-      values.images = fileList.map((file) => file.uid);
-      dispatch(addProducts(values));
+      values.images = fileList.map((file) => ({
+        public_id: file.uid,
+        url: file.url,
+      }));
+      setTostMessage(true);
+      if (getEditId === undefined) {
+        dispatch(addProducts(values));
+      } else {
+        values._id = getEditId;
+        dispatch(updateProducts(values));
+      }
     },
   });
 
@@ -114,21 +185,40 @@ export default function AddProduct() {
     dispatch(getProCate());
     dispatch(getAllUser());
     dispatch(getColorList());
+    if (toastMessage) {
+      if (isSuccess && createProducts) {
+        toast.success(message);
+        formik.resetForm();
+        setTostMessage(false);
+        setTimeout(navigate("/admin/product-list"), 3000);
+      }
 
-    if (isSuccess && message !== undefined) {
-      toast.success(message);
-      formik.resetForm();
-      setTimeout(navigate("/admin/product-list"), 3000);
+      if (isError === true && message !== undefined) {
+        setTostMessage(false);
+        toast.error(message);
+      }
     }
+  }, [isSuccess, isError, message, createProducts, toastMessage, dispatch]);
 
-    if (isError === true && message !== undefined) {
-      toast.error(message);
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && updateProData && message !== undefined) {
+        setTostMessage(false);
+        toast.success(message);
+        formik.resetForm();
+        setTimeout(navigate("/admin/product-list"), 1000);
+      }
+
+      if (isError === true && message !== undefined) {
+        setTostMessage(false);
+        toast.error(message);
+      }
     }
-  }, [isSuccess, isError, message, createProducts, dispatch]);
+  }, [isSuccess, isError, message, updateProData, toastMessage, dispatch]);
 
   return (
     <div>
-      <h3 className="mb-5">Add Product</h3>
+      <h3 className="mb-5">{action} Product</h3>
       <form action="" onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -318,7 +408,7 @@ export default function AddProduct() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {action}
                   </button>
                   <button
                     type="button"
