@@ -1,7 +1,7 @@
 import { useFormik } from "formik";
 import React, { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
@@ -10,19 +10,43 @@ import CustomUpload from "../components/CustomUpload";
 import {
   blogCategory,
   createBlogCategory,
+  getABlogCategory,
   resetBlogCate,
+  updateBlogCategory,
 } from "../features/blogCate/blogCategorySlice";
 import { getAllUser } from "../features/customers/customerSlice";
 
 export default function AddBlogCategory() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
+  const getEditID = location.pathname.split("/")[3];
+  const [action, setAction] = useState("Add");
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      dispatch(getABlogCategory(getEditID));
+      setAction("Update");
+    } else {
+      setAction("Add");
+    }
+  }, [dispatch, getABlogCategory, getEditID]);
+
   const [toastMessage, setToastMessage] = useState(false);
   const authorList = useSelector((state) => state.customer.customers || []);
   const blogCateList = useSelector((state) => state.bcat.data || []);
 
   const newBlogCat = useSelector((state) => state.bcat);
-  const { isSuccess, isError, message, createBlogCateData } = newBlogCat;
+
+  const {
+    isSuccess,
+    isError,
+    message,
+    createBlogCateData,
+    UpdateBlogCate,
+    EditBlogCate,
+  } = newBlogCat;
+  const defaultData = EditBlogCate || UpdateBlogCate;
 
   const [fileList, setFileList] = useState([]);
 
@@ -57,6 +81,33 @@ export default function AddBlogCategory() {
     { key: true, value: "Publish" },
     { key: false, value: "Private" },
   ];
+  const showImage =
+    getEditID !== undefined && defaultData?.images
+      ? defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }))
+      : [];
+
+  useEffect(() => {
+    if (getEditID !== undefined) {
+      if (defaultData?.images) {
+        const updatedImages = defaultData.images.map((img) => ({
+          publicId: img.public_id,
+          url: img.url,
+          status: "done",
+          uid: img.public_id,
+          name: img.url,
+        }));
+        setFileList(updatedImages);
+      }
+    } else {
+      setFileList([]);
+    }
+  }, [getEditID, defaultData]);
 
   let schemaValidation = Yup.object({
     title: Yup.string().required("Title is require"),
@@ -65,24 +116,52 @@ export default function AddBlogCategory() {
 
   const formik = useFormik({
     initialValues: {
-      title: "",
-      parent: "",
-      author: "",
-      status: "",
-      shortDes: "",
-      metaTitle: "",
-      metaDes: "",
-      metaKey: "",
-      isIndexed: "",
+      title: getEditID !== undefined ? defaultData?.title || "" : "",
+      parent: getEditID !== undefined ? defaultData?.parent || "" : "",
+      author: getEditID !== undefined ? defaultData?.author || "" : "",
+      status: getEditID !== undefined ? defaultData?.status || "" : "",
+      shortDes: getEditID !== undefined ? defaultData?.shortDes || "" : "",
+      metaTitle: getEditID !== undefined ? defaultData?.metaTitle || "" : "",
+      metaDes: getEditID !== undefined ? defaultData?.metaDes || "" : "",
+      metaKey: getEditID !== undefined ? defaultData?.metaKey || "" : "",
+      isIndexed: getEditID !== undefined ? defaultData?.isIndexed || "" : "",
       images: [],
     },
     validationSchema: schemaValidation,
+    enableReinitialize: true,
     onSubmit: (values) => {
-      values.images = fileList.map((file) => file.uid);
+      values.images = fileList.map((file) => ({
+        public_id: file.uid,
+        url: file.url,
+      }));
       setToastMessage(true);
-      dispatch(createBlogCategory(values));
+      if (getEditID !== undefined) {
+        values._id = getEditID;
+        dispatch(updateBlogCategory(values));
+      } else {
+        dispatch(createBlogCategory(values));
+      }
     },
   });
+
+  useEffect(() => {
+    if (toastMessage) {
+      if (isSuccess && UpdateBlogCate && message !== undefined) {
+        toast.success(message);
+        setToastMessage(false);
+        setTimeout(() => {
+          navigate("/admin/blog-category-list");
+          dispatch(resetBlogCate());
+        }, 1000);
+      }
+
+      if (isError && message !== undefined) {
+        toast.error(message);
+        setToastMessage(false);
+        dispatch(resetBlogCate());
+      }
+    }
+  }, [dispatch, isSuccess, isError, message, UpdateBlogCate]);
 
   useEffect(() => {
     dispatch(getAllUser());
@@ -108,7 +187,7 @@ export default function AddBlogCategory() {
 
   return (
     <div>
-      <h3 className="mb-5">Add Blog Category</h3>
+      <h3 className="mb-5">{action} Blog Category</h3>
       <form action="" onSubmit={formik.handleSubmit}>
         <div className="row">
           <div className="col-md-8">
@@ -234,7 +313,7 @@ export default function AddBlogCategory() {
                     type="submit"
                     className="btn btn-success custom_button text-white mt-3"
                   >
-                    Publish
+                    {action}
                   </button>
                   <button
                     type="button"

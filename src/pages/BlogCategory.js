@@ -1,10 +1,10 @@
 import { Table } from "antd";
-import React, { useEffect } from "react";
-import {useDispatch, useSelector} from "react-redux";
 import { ColumnsType } from "antd/es/table";
-import { MdDelete } from "react-icons/md";
+import React, { useEffect } from "react";
 import { FaRegEdit } from "react-icons/fa";
-import {Link} from "react-router-dom";
+import { MdDelete } from "react-icons/md";
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 import { blogCategory } from "../features/blogCate/blogCategorySlice";
 
 interface DataType {
@@ -19,24 +19,23 @@ const columns: ColumnsType<DataType> = [
   {
     title: "Title",
     dataIndex: "title",
-    sorter: (a: DataType, b: DataType) => (a.title).localeCompare(b.title)
+    sorter: (a: DataType, b: DataType) => a.title.localeCompare(b.title),
   },
   {
     title: "Level",
     dataIndex: "level",
-    sorter: (a: DataType, b: DataType) => (a.level -b.level)
+    sorter: (a: DataType, b: DataType) => a.level - b.level,
   },
   {
     title: "Parent",
     dataIndex: "parent",
-    sorter: (a: DataType, b: DataType) => (a.parent-b.parent)
+    sorter: (a: DataType, b: DataType) => a.parent - b.parent,
   },
   {
     title: "Action",
     dataIndex: "action",
   },
 ];
-
 
 const onChange: TableProps<DataType>["onChange"] = (
   pagination,
@@ -49,25 +48,31 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function BlogCategory() {
   const dispatch = useDispatch();
 
-  const getBlogCate = useSelector((state:any)=> state.bcat.data || []);
+  const getBlogCate = useSelector((state: any) => state.bcat.data || []);
 
-  useEffect(()=>{
+  useEffect(() => {
     dispatch(blogCategory());
-  },[dispatch]);
+  }, [dispatch]);
 
-
-const data: DataType[] = getBlogCate.map((field: any, index:any)=> ({
-  key: index,
-  title: field.title,
-  lavel: field.level,
-  parent: field.parent, 
-  action:(
-    <>
-      <Link className="btn m-1 bg-primary text-white" to="/edit/"><FaRegEdit /></Link>
-      <Link className="btn m-1  bg-danger text-white" to="/delete/"><MdDelete /></Link>
-    </>
-  )
-}));
+  const data: DataType[] = getBlogCate.map((field: any, index: any) => ({
+    key: index,
+    title: field.title,
+    lavel: field.level,
+    parent: field.parent,
+    action: (
+      <>
+        <Link
+          className="btn m-1 bg-primary text-white"
+          to={`/admin/blog-category/${field._id}`}
+        >
+          <FaRegEdit />
+        </Link>
+        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+          <MdDelete />
+        </Link>
+      </>
+    ),
+  }));
   return (
     <div>
       <h3 className="mb-5">BlogCategory</h3>

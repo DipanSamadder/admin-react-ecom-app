@@ -26,9 +26,39 @@ const createBlogCate = async (data) => {
   }
 };
 
+//get a new brand
+const getABlogCate = async (id) => {
+  try {
+    const response = await axios.get(
+      `${base_url}blog-category/${id}`,
+      headerConfig
+    );
+
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
+
+//update a new brand
+const updateBlogCate = async (payload) => {
+  try {
+    const response = await axios.put(
+      `${base_url}blog-category/${payload._id}`,
+      payload,
+      headerConfig
+    );
+
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
 const blogCateService = {
   getBlogCate,
   createBlogCate,
+  getABlogCate,
+  updateBlogCate,
 };
 
 export default blogCateService;

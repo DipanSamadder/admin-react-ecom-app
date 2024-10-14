@@ -100,6 +100,7 @@ export default function AddCategory() {
       setFileList([]);
     }
   }, [getEditID, defaultData]);
+
   const formik = useFormik({
     initialValues: {
       title: getEditID !== undefined ? defaultData?.title || "" : "",

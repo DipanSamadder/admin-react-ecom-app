@@ -40,6 +40,38 @@ export const createBlogCategory = createAsyncThunk(
     }
   }
 );
+
+export const getABlogCategory = createAsyncThunk(
+  "admin/get-a-blog-cate",
+  async (id, thunkApi) => {
+    try {
+      return await blogCateService.getABlogCate(id);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
+
+export const updateBlogCategory = createAsyncThunk(
+  "admin/update-blog-cate",
+  async (payload, thunkApi) => {
+    try {
+      return await blogCateService.updateBlogCate(payload);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
 export const blogCategorySlice = createSlice({
   name: "bCategory",
   initialState,
@@ -49,6 +81,8 @@ export const blogCategorySlice = createSlice({
       state.isSuccess = false;
       state.isError = false;
       state.createBlogCate = "";
+      state.EditBlogCate = "";
+      state.UpdateBlogCate = "";
       state.message = "";
     },
   },
@@ -61,7 +95,7 @@ export const blogCategorySlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.data = action.payload;
+        state.data = action.payload?.data;
       })
       .addCase(blogCategory.rejected, (state, action) => {
         state.isLoading = false;
@@ -79,10 +113,48 @@ export const blogCategorySlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.isError = false;
-        state.createBlogCate = action.payload;
+        state.createBlogCate = action.payload?.data;
         state.message = action.payload?.message;
       })
       .addCase(createBlogCategory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for Edit category
+    builder
+      .addCase(getABlogCategory.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(getABlogCategory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.EditBlogCate = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(getABlogCategory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for Update category
+    builder
+      .addCase(updateBlogCategory.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateBlogCategory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.UpdateBlogCate = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(updateBlogCategory.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;
