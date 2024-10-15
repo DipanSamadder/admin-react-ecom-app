@@ -45,12 +45,23 @@ const updateBrand = async (data) => {
     throw error.response?.data?.message || error.message;
   }
 };
+
+// get a  brand
+const deleteBrand = async (id) => {
+  try {
+    const response = await axios.delete(`${base_url}brand/${id}`, headerConfig);
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
 // Export the service functions
 const brandServices = {
   getBrands,
   addBrand,
   getABrand,
   updateBrand,
+  deleteBrand,
 };
 
 export default brandServices;

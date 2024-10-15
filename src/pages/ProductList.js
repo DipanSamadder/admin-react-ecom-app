@@ -1,11 +1,13 @@
 import { Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getProducts } from "../features/product/productSlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { deleteProducts, getProducts } from "../features/product/productSlice";
 
 interface DataType {
   key: React.Key;
@@ -65,6 +67,41 @@ export default function ProductList() {
   const productList = useSelector((state: any) => state.product.products);
   console.log(productList);
 
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteAction = useSelector((state) => state.product);
+  const { isSuccess, isError, message, deleteProData } = deleteAction;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteProducts(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
+
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(getProducts());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, deleteProData]);
   useEffect(() => {
     dispatch(getProducts());
   }, [dispatch]);
@@ -91,9 +128,12 @@ export default function ProductList() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(product._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -108,6 +148,14 @@ export default function ProductList() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Coupon Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }

@@ -146,7 +146,7 @@ export default function AddBrand() {
         toast.success(message);
         setTimeout(function () {
           navigate("/admin/brand-list");
-        }, 1000);
+        }, 100);
         dispatch(resetbrandState());
       }
       if (isError) {
@@ -175,7 +175,7 @@ export default function AddBrand() {
         setTimeout(function () {
           navigate("/admin/brand-list");
           dispatch(resetbrandState());
-        }, 3000);
+        }, 100);
       }
       if (isError) {
         toast.error(message);

@@ -45,7 +45,7 @@ export default function AddProduct() {
   ];
 
   const getColorsList = useSelector((state) => state.color.data || []);
-  const getBrandList = useSelector((state) => state.brand.brands || []);
+  const getBrandList = useSelector((state) => state.brand.data || []);
   const getCateList = useSelector((state) => state.pcat.data || []);
   const customerList = useSelector((state) => state.customer.customers || []);
   const addPro = useSelector((state) => state.product || []);

@@ -66,6 +66,21 @@ export const updateProCate = createAsyncThunk(
   }
 );
 
+export const deleteProCate = createAsyncThunk(
+  "admin/delete-pcat",
+  async (id, thunkApi) => {
+    try {
+      return await proCatService.deleteProCates(id);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
+
 export const proCatSlice = createSlice({
   name: "pcategory",
   initialState,
@@ -76,6 +91,7 @@ export const proCatSlice = createSlice({
       state.message = "";
       state.createProCateData = "";
       state.updateProCateData = "";
+      state.deleteProCateData = "";
       state.editProCateData = "";
     },
   },
@@ -151,6 +167,26 @@ export const proCatSlice = createSlice({
         state.message = action.payload?.message;
       })
       .addCase(updateProCate.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.data = [];
+        state.message = action.payload?.message;
+      });
+
+    //for Delete Category slice
+    builder
+      .addCase(deleteProCate.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(deleteProCate.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.deleteProCateData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(deleteProCate.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;

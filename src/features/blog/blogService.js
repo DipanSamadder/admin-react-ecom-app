@@ -46,11 +46,22 @@ const updateBlog = async (payload) => {
   }
 };
 
+// Get a  Blog
+const deleteBlog = async (id) => {
+  try {
+    const response = await axios.delete(`${base_url}blog/${id}`, headerConfig);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message;
+  }
+};
+
 const blogServices = {
   getBlogs,
   createBlog,
   getABlog,
   updateBlog,
+  deleteBlog,
 };
 
 export default blogServices;

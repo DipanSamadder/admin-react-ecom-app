@@ -1,12 +1,13 @@
 import { Table } from "antd";
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getCoupons } from "../features/coupon/couponSlice";
-
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { deleteCoupons, getCoupons } from "../features/coupon/couponSlice";
 interface DataType {
   key: React.Key;
   name: string;
@@ -53,7 +54,41 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function Coupons() {
   const dispatch = useDispatch();
   const getCoupon = useSelector((state) => state.coupon.data || []);
-  console.log(getCoupon);
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteCoupon = useSelector((state) => state.coupon);
+  const { isSuccess, isError, message, deleteCouponData } = deleteCoupon;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteCoupons(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
+
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(getCoupons());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, deleteCouponData]);
 
   useEffect(() => {
     dispatch(getCoupons());
@@ -72,9 +107,12 @@ export default function Coupons() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1 bg-primary text-white" to="/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(row._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -86,6 +124,14 @@ export default function Coupons() {
         <div className="col-12 col-md-12">
           <div className="tableproduct">
             <Table columns={columns} dataSource={data} onChange={onChange} />
+            <CustomModel
+              open={open}
+              title="Coupon Delete"
+              handleSubmit={handleSubmit}
+              confirmLoading={confirmLoading}
+              handleCancel={handleCancel}
+              body="Are you want to delete?"
+            />
           </div>
         </div>
       </div>

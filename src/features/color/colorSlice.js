@@ -68,6 +68,22 @@ export const updateColor = createAsyncThunk(
     }
   }
 );
+
+export const DeleteColor = createAsyncThunk(
+  "admin/delete-color",
+  async (id, thunkApi) => {
+    try {
+      return await colorService.deleteColor(id);
+    } catch (error) {
+      const senitizeError = {
+        message: error.response?.data.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(senitizeError);
+    }
+  }
+);
+
 const colorSlice = createSlice({
   name: "color",
   initialState,
@@ -79,6 +95,7 @@ const colorSlice = createSlice({
       state.message = "";
       state.createColorData = "";
       state.EditColorData = "";
+      state.DeleteColorData = "";
       state.UpdateColorData = "";
     },
   },
@@ -111,7 +128,7 @@ const colorSlice = createSlice({
         state.isSuccess = true;
         state.isError = false;
         state.message = action.payload?.message;
-        state.createColorData = action.payload;
+        state.createColorData = action.payload?.data;
       })
       .addCase(createColor.rejected, (state, action) => {
         state.isError = true;
@@ -149,9 +166,28 @@ const colorSlice = createSlice({
         state.isSuccess = true;
         state.isError = false;
         state.message = action.payload?.message;
-        state.UpdateColorData = action.payload;
+        state.UpdateColorData = action.payload?.data;
       })
       .addCase(updateColor.rejected, (state, action) => {
+        state.isError = true;
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.message = action.payload?.message || "Error adding color";
+      });
+
+    //for update color
+    builder
+      .addCase(DeleteColor.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(DeleteColor.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.DeleteColorData = action.payload?.data;
+      })
+      .addCase(DeleteColor.rejected, (state, action) => {
         state.isError = true;
         state.isLoading = false;
         state.isSuccess = false;

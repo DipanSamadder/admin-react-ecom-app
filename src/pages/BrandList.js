@@ -1,11 +1,13 @@
 import { Table } from "antd";
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getBrands } from "../features/brand/brandSlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { deleteBrand, getBrands } from "../features/brand/brandSlice";
 
 interface DataType {
   key: React.Key;
@@ -53,7 +55,51 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function BrandList() {
   const dispatch = useDispatch();
 
-  const getBrandList = useSelector((state: any) => state.brand.brands || []);
+  const getBrandList = useSelector((state: any) => state.brand.data || []);
+
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteAction = useSelector((state) => state.brand);
+  const { isSuccess, isError, message, deleteBrandData } = deleteAction;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteBrand(deleteId));
+
+    setTimeout(() => {
+      setOpen(false);
+      setTostMessage(false);
+      setConfirmLoading(false);
+    }, 1000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setTostMessage(false);
+    setConfirmLoading(false);
+  };
+
+  useEffect(() => {
+    if (
+      toastMessage &&
+      deleteId !== undefined &&
+      message &&
+      message !== undefined
+    ) {
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+      dispatch(getBrands());
+    }
+  }, [message, deleteBrandData]);
 
   useEffect(() => {
     dispatch(getBrands());
@@ -78,9 +124,12 @@ export default function BrandList() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(brand._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -95,6 +144,14 @@ export default function BrandList() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Brand Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }

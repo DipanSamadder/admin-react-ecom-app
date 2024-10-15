@@ -54,11 +54,26 @@ const updateBlogCate = async (payload) => {
     throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
   }
 };
+
+//update a new brand
+const deleteBlogCate = async (id) => {
+  try {
+    const response = await axios.delete(
+      `${base_url}blog-category/${id}`,
+      headerConfig
+    );
+
+    return response.data; // Assuming response.data contains the added brand info
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
 const blogCateService = {
   getBlogCate,
   createBlogCate,
   getABlogCate,
   updateBlogCate,
+  deleteBlogCate,
 };
 
 export default blogCateService;

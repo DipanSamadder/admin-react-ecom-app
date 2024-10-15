@@ -71,6 +71,23 @@ export const updateCoupons = createAsyncThunk(
     }
   }
 );
+
+export const deleteCoupons = createAsyncThunk(
+  "admin/delete-coupon",
+  async (id, thunkApi) => {
+    try {
+      return await couponService.deleteCoupon(id);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
+
 export const couponSlice = createSlice({
   name: "coupon",
   initialState,
@@ -82,6 +99,7 @@ export const couponSlice = createSlice({
       state.createCouponData = "";
       state.EditCouponData = "";
       state.UpdateCouponData = "";
+      state.deleteCouponData = "";
       state.message = "";
     },
   },
@@ -154,6 +172,25 @@ export const couponSlice = createSlice({
         state.message = action.payload?.message;
       })
       .addCase(updateCoupons.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for Delete category
+    builder
+      .addCase(deleteCoupons.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(deleteCoupons.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.deleteCouponData = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(deleteCoupons.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;

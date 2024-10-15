@@ -73,9 +73,26 @@ export const updateBrand = createAsyncThunk(
     }
   }
 );
+
+// Async thunk for fetching brands
+export const deleteBrand = createAsyncThunk(
+  "admin/delete-brand",
+  async (id, thunkApi) => {
+    try {
+      return await brandServices.deleteBrand(id); // Expecting this function to return an array of brands
+    } catch (error) {
+      const serializableError = {
+        message: error.response?.data?.message || error.message,
+        status: error.response?.status,
+      };
+      return thunkApi.rejectWithValue(serializableError);
+    }
+  }
+);
+
 // Brand slice
 export const brandSlice = createSlice({
-  name: "brand",
+  name: "brands",
   initialState,
   reducers: {
     resetbrandState: (state) => {
@@ -84,6 +101,7 @@ export const brandSlice = createSlice({
       state.message = "";
       state.createBrandData = "";
       state.updatedData = "";
+      state.deleteBrandData = "";
       state.editData = "";
     },
   },
@@ -100,7 +118,8 @@ export const brandSlice = createSlice({
         state.isSuccess = true;
         state.isLoading = false;
         state.isError = false;
-        state.brands = action.payload;
+        state.message = action.payload?.message;
+        state.data = action.payload?.data;
       })
       .addCase(getBrands.rejected, (state, action) => {
         state.isSuccess = false;
@@ -122,7 +141,7 @@ export const brandSlice = createSlice({
         state.isLoading = false;
         state.isError = false;
         state.message = action.payload?.message;
-        state.createBrandData = action.payload; // Add the newly created brand to the list
+        state.createBrandData = action.payload?.data; // Add the newly created brand to the list
       })
       .addCase(addBrand.rejected, (state, action) => {
         state.isSuccess = false;
@@ -144,7 +163,7 @@ export const brandSlice = createSlice({
         state.isLoading = false;
         state.isError = false;
         state.message = action.payload?.message;
-        state.editData = action.payload.data;
+        state.editData = action.payload?.data;
       })
       .addCase(getABrand.rejected, (state, action) => {
         state.isSuccess = false;
@@ -166,9 +185,31 @@ export const brandSlice = createSlice({
         state.isLoading = false;
         state.isError = false;
         state.message = action.payload?.message;
-        state.updatedData = action.payload.data;
+        state.updatedData = action.payload?.data;
       })
       .addCase(updateBrand.rejected, (state, action) => {
+        state.isSuccess = false;
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Error update brand";
+      });
+
+    // delete A Brand async thunks
+    builder
+      .addCase(deleteBrand.pending, (state) => {
+        state.isLoading = true;
+        state.isSuccess = false;
+        state.isError = false;
+        state.message = "";
+      })
+      .addCase(deleteBrand.fulfilled, (state, action) => {
+        state.isSuccess = true;
+        state.isLoading = false;
+        state.isError = false;
+        state.message = action.payload?.message;
+        state.deleteBrandData = action.payload?.data;
+      })
+      .addCase(deleteBrand.rejected, (state, action) => {
         state.isSuccess = false;
         state.isLoading = false;
         state.isError = true;

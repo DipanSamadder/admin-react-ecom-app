@@ -42,11 +42,24 @@ const updateProduct = async (payload) => {
   }
 };
 
+const deleteProduct = async (id) => {
+  try {
+    const response = await axios.delete(
+      `${base_url}product/${id}`,
+      headerConfig
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
+
 const productService = {
   getProducts,
   addProduct,
   getAProduct,
   updateProduct,
+  deleteProduct,
 };
 
 export default productService;

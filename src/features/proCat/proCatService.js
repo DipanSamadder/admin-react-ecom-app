@@ -51,11 +51,24 @@ export const updateProCates = async (payload) => {
   }
 };
 
+//Create new Category
+export const deleteProCates = async (id) => {
+  try {
+    const response = await axios.delete(
+      `${base_url}category/${id}`,
+      headerConfig
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data?.message || error.message; // Proper error throwing for catch block in thunk
+  }
+};
 const proCatService = {
   getProCates,
   createProCates,
   getACategory,
   updateProCates,
+  deleteProCates,
 };
 
 export default proCatService;

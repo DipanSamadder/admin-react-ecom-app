@@ -1,11 +1,13 @@
 import { Table } from "antd";
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getColorList } from "../features/color/colorSlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { DeleteColor, getColorList } from "../features/color/colorSlice";
 
 interface DataType {
   key: React.Key;
@@ -42,8 +44,40 @@ const onChange: TableProps<DataType>["onChange"] = (
 export default function ColorList() {
   const dispatch = useDispatch();
   const getColorsList = useSelector((state: any) => state.color?.data || []);
-  console.log(`${getColorsList} --------------`);
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteAction = useSelector((state) => state.color);
+  const { isSuccess, isError, message, DeleteColorData } = deleteAction;
 
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(DeleteColor(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(getColorList());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, DeleteColorData]);
   useEffect(() => {
     dispatch(getColorList());
   }, [dispatch]);
@@ -71,9 +105,12 @@ export default function ColorList() {
             >
               <FaRegEdit />
             </Link>
-            <Link className="btn m-1 bg-primary text-white" to="/">
+            <button
+              className="btn m-1 bg-primary text-white"
+              onClick={() => showModal(row._id)}
+            >
               <MdDelete />
-            </Link>
+            </button>
           </>
         ),
       }))
@@ -89,6 +126,14 @@ export default function ColorList() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Coupon Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }

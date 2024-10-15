@@ -1,12 +1,13 @@
 import { Table } from "antd";
-
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getBlogList } from "../features/blog/blogSlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { deleteBlog, getBlogList } from "../features/blog/blogSlice";
 
 interface DataType {
   key: React.Key;
@@ -49,9 +50,43 @@ const onChange = (pagination: any, filters: any, sorter: any, extra: any) => {
 
 export default function BlogList() {
   const dispatch = useDispatch();
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteAction = useSelector((state) => state.blog);
+  const { isSuccess, isError, message, deleteBlogData } = deleteAction;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteBlog(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
 
   const getBlogsList = useSelector((state: any) => state.blog.data || []);
-  console.log(getBlogsList);
+
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(getBlogList());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, deleteBlogData]);
 
   useEffect(() => {
     dispatch(getBlogList());
@@ -77,9 +112,12 @@ export default function BlogList() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(row._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -94,6 +132,14 @@ export default function BlogList() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Blog Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }

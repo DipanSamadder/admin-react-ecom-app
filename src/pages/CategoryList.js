@@ -1,11 +1,13 @@
 import { Table } from "antd";
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { getProCate } from "../features/proCat/proCatSlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import { deleteProCate, getProCate } from "../features/proCat/proCatSlice";
 
 interface DataType {
   key: React.Key;
@@ -61,6 +63,42 @@ export default function CategoryList() {
 
   const getPCategory = useSelector((state: any) => state.pcat.data || []);
 
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+  const deleteAction = useSelector((state) => state.pcat);
+  const { isSuccess, isError, message, deleteProCateData } = deleteAction;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteProCate(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
+
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(getProCate());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, deleteProCateData]);
+
   useEffect(() => {
     dispatch(getProCate());
   }, [dispatch]);
@@ -85,9 +123,12 @@ export default function CategoryList() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(field._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -102,6 +143,14 @@ export default function CategoryList() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Coupon Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }

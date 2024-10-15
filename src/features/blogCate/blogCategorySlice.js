@@ -72,6 +72,22 @@ export const updateBlogCategory = createAsyncThunk(
     }
   }
 );
+
+export const deleteBlogCategory = createAsyncThunk(
+  "admin/delete-blog-cate",
+  async (id, thunkApi) => {
+    try {
+      return await blogCateService.deleteBlogCate(id);
+    } catch (error) {
+      const senitizerError = {
+        message: error.response?.data.messaeg || error.messaeg,
+        status: error.response?.status,
+      };
+
+      return thunkApi.rejectWithValue(senitizerError);
+    }
+  }
+);
 export const blogCategorySlice = createSlice({
   name: "bCategory",
   initialState,
@@ -83,6 +99,7 @@ export const blogCategorySlice = createSlice({
       state.createBlogCate = "";
       state.EditBlogCate = "";
       state.UpdateBlogCate = "";
+      state.DeleteBlogCate = "";
       state.message = "";
     },
   },
@@ -155,6 +172,25 @@ export const blogCategorySlice = createSlice({
         state.message = action.payload?.message;
       })
       .addCase(updateBlogCategory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = false;
+        state.isError = true;
+        state.message = action.payload?.message || "Sorry! Try again please";
+      });
+
+    //for Delete category
+    builder
+      .addCase(deleteBlogCategory.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(deleteBlogCategory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        state.isError = false;
+        state.DeleteBlogCate = action.payload?.data;
+        state.message = action.payload?.message;
+      })
+      .addCase(deleteBlogCategory.rejected, (state, action) => {
         state.isLoading = false;
         state.isSuccess = false;
         state.isError = true;

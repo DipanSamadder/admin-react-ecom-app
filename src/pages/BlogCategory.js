@@ -1,11 +1,16 @@
 import { Table } from "antd";
 import { ColumnsType } from "antd/es/table";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegEdit } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { blogCategory } from "../features/blogCate/blogCategorySlice";
+import { toast } from "react-toastify";
+import CustomModel from "../components/CustomModel";
+import {
+  blogCategory,
+  deleteBlogCategory,
+} from "../features/blogCate/blogCategorySlice";
 
 interface DataType {
   key: React.Key;
@@ -47,8 +52,44 @@ const onChange: TableProps<DataType>["onChange"] = (
 };
 export default function BlogCategory() {
   const dispatch = useDispatch();
+  const [open, setOpen] = useState(false);
+  const [toastMessage, setTostMessage] = useState(false);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+  const [deleteId, setDeleteId] = useState("");
 
+  const showModal = (e) => {
+    setOpen(true);
+    setDeleteId(e);
+  };
+
+  const deleteCoupon = useSelector((state) => state.bcat);
+  const { isSuccess, isError, message, DeleteBlogCate } = deleteCoupon;
+
+  const handleSubmit = (e) => {
+    setConfirmLoading(true);
+    setTostMessage(true);
+    dispatch(deleteBlogCategory(deleteId));
+    setTimeout(() => {
+      setOpen(false);
+      setConfirmLoading(false);
+    }, 2000);
+  };
+
+  const handleCancel = () => {
+    setOpen(false);
+    setConfirmLoading(false);
+  };
   const getBlogCate = useSelector((state: any) => state.bcat.data || []);
+
+  useEffect(() => {
+    if (toastMessage && deleteId !== undefined && message !== undefined) {
+      dispatch(blogCategory());
+      setTostMessage(false);
+      toast.success(message);
+      setConfirmLoading(false);
+      setOpen(false);
+    }
+  }, [message, DeleteBlogCate]);
 
   useEffect(() => {
     dispatch(blogCategory());
@@ -67,9 +108,12 @@ export default function BlogCategory() {
         >
           <FaRegEdit />
         </Link>
-        <Link className="btn m-1  bg-danger text-white" to="/delete/">
+        <button
+          className="btn m-1 bg-primary text-white"
+          onClick={() => showModal(field._id)}
+        >
           <MdDelete />
-        </Link>
+        </button>
       </>
     ),
   }));
@@ -83,6 +127,14 @@ export default function BlogCategory() {
           </div>
         </div>
       </div>
+      <CustomModel
+        open={open}
+        title="Blog Delete"
+        handleSubmit={handleSubmit}
+        confirmLoading={confirmLoading}
+        handleCancel={handleCancel}
+        body="Are you want to delete?"
+      />
     </div>
   );
 }
