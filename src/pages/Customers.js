@@ -35,7 +35,7 @@ const onChange = (pagination, filters, sorter, extra) => {
 export default function Customers() {
   const dispatch = useDispatch();
 
-  const customerList = useSelector((state) => state.customer.customers);
+  const customerList = useSelector((state) => state.customer.data);
 
   useEffect(() => {
     dispatch(getAllUser());

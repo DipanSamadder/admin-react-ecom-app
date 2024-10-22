@@ -1,10 +1,10 @@
+import { useFormik } from "formik";
 import React, { useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import * as Yup from "yup";
 import CustomInput from "../components/CustomInput";
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
 
-import {useDispatch, useSelector} from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "../features/auth/authSlice";
 
 const Login = () => {
@@ -12,31 +12,29 @@ const Login = () => {
   const navigate = useNavigate();
 
   let schemaValidation = Yup.object({
-    email: Yup.string().email('Invalid email address').required('Required'),
-    password: Yup.string().required('Required'),
+    email: Yup.string().email("Invalid email address").required("Required"),
+    password: Yup.string().required("Required"),
   });
-  
+
   const formik = useFormik({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
     validationSchema: schemaValidation,
-    onSubmit: values => {
+    onSubmit: (values) => {
       dispatch(login(values));
-
     },
   });
 
-  const {user, isLoading, isError, isSuccess, message} = useSelector((state)=> state.auth);
-  useEffect(()=>{
-
-
-    if(!user == null || isSuccess){
-      navigate('admin');
+  const { user, isLoading, isError, isSuccess, message } = useSelector(
+    (state) => state.auth
+  );
+  useEffect(() => {
+    if (!user == null || isSuccess) {
+      navigate("admin");
     }
-    
-  },[user,isSuccess]);
+  }, [user, isSuccess]);
   return (
     <div
       className="w-100 bg-body-tertiary d-flex align-items-center justify-content-center"
@@ -64,9 +62,9 @@ const Login = () => {
             value={formik.values.email}
           />
           <small className="text-danger">
-              {formik.touched.email && formik.errors.email ? (
-                <div>{formik.errors.email}</div>
-              ) : null}
+            {formik.touched.email && formik.errors.email ? (
+              <div>{formik.errors.email}</div>
+            ) : null}
           </small>
           <CustomInput
             type="password"
@@ -78,9 +76,9 @@ const Login = () => {
             value={formik.values.password}
           />
           <small className="text-danger">
-              {formik.touched.password && formik.errors.password ? (
-                <div>{formik.errors.password}</div>
-              ) : null}
+            {formik.touched.password && formik.errors.password ? (
+              <div>{formik.errors.password}</div>
+            ) : null}
           </small>
           <div className="mb-4 row py-2 flex-wrap">
             <div className="col-auto me-auto">
@@ -93,7 +91,7 @@ const Login = () => {
               <a href="auth-forgot-password.html">Forgot password?</a>
             </div>
           </div>
-          <button type="submit"  className="w-100 btn btn-success mb-2">
+          <button type="submit" className="w-100 btn btn-success mb-2">
             Success
           </button>
         </form>
